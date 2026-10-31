@@ -9,30 +9,51 @@ import { hashPassword, MIN_PASSWORD_LENGTH } from "../lib/auth/password.ts";
 
 dotenv.config({ path: ".dev.vars", quiet: true });
 
+// 兩次輸入之間共用：一次收到的資料可能包含好幾個字元，甚至兩行
+let pending = "";
+// Windows 的 Enter 是 \r\n：\r 結束這一行後，緊接著的 \n 要丟掉，
+// 不然下一次輸入會被當成直接按了 Enter
+let skipNextLf = false;
+
 function promptHidden(question: string): Promise<string> {
   return new Promise((resolve) => {
     const { stdin, stdout } = process;
     stdout.write(question);
-    stdin.setRawMode?.(true);
-    stdin.resume();
+    if (stdin.isTTY) stdin.setRawMode(true);
     stdin.setEncoding("utf8");
     let value = "";
-    const onData = (ch: string) => {
-      if (ch === "\r" || ch === "\n" || ch === "\u0004") {
-        stdin.setRawMode?.(false);
-        stdin.pause();
-        stdin.off("data", onData);
-        stdout.write("\n");
-        resolve(value);
-      } else if (ch === "\u0003") {
-        process.exit(130);
-      } else if (ch === "\u007f" || ch === "\b") {
-        value = value.slice(0, -1);
-      } else {
-        value += ch;
+
+    const feed = (chunk: string) => {
+      for (let i = 0; i < chunk.length; i++) {
+        const ch = chunk[i];
+        if (ch === "\n" && skipNextLf) {
+          skipNextLf = false;
+          continue;
+        }
+        skipNextLf = false;
+        if (ch === "\r" || ch === "\n" || ch === "\u0004") {
+          skipNextLf = ch === "\r";
+          pending = chunk.slice(i + 1);
+          stdin.off("data", feed);
+          if (stdin.isTTY) stdin.setRawMode(false);
+          stdin.pause();
+          stdout.write("\n");
+          resolve(value);
+          return;
+        }
+        if (ch === "\u0003") process.exit(130);
+        if (ch === "\u007f" || ch === "\b") value = value.slice(0, -1);
+        else value += ch;
       }
     };
-    stdin.on("data", onData);
+
+    stdin.on("data", feed);
+    stdin.resume();
+    if (pending) {
+      const rest = pending;
+      pending = "";
+      feed(rest);
+    }
   });
 }
 
