@@ -11,8 +11,13 @@
 ```bash
 npm install
 cp .dev.vars.example .dev.vars   # 填入 TiDB 的 DATABASE_URL
-npm run db:push                  # 建立資料表（或用 drizzle/ 裡的 SQL migration）
+npm run db:migrate               # 建立資料表與初始資料
+npm run user:create -- <帳號> <顯示名稱> admin   # 建立登入帳號（密碼用隱藏輸入）
 ```
+
+第一次登入後，到「設定 → 匯入 Excel」把現有的公糧 Excel 與週報表轉進來。
+匯入前會列出每一筆差異（姓名寫法不同、公斤不同、計算跟 Excel 不同…），確認後才寫入；
+同一個收購點重複匯入會整批取代。
 
 ## 常用指令
 
@@ -31,7 +36,11 @@ npm run db:push                  # 建立資料表（或用 drizzle/ 裡的 SQL 
 
 ```
 lib/calc/     計算邏輯（利、運費、先付、收、折算率、濕穀數量、隨機水分、分頁小計）
+lib/import/   讀取 Excel、配對公糧與週報表、列出差異
+lib/auth/     密碼雜湊（PBKDF2）與 session
 lib/db/       資料表結構與連線
+proxy.ts      沒登入就導去登入頁
+scripts/      建立帳號等管理指令
 drizzle/      SQL migration 與初始資料
 app/          頁面
 components/   共用元件（App 外殼、離線提示、service worker 註冊）

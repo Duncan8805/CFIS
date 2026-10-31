@@ -3,11 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { logout } from "@/app/actions/auth";
 import { NAV_ITEMS, isActive } from "./nav-items";
 import { OfflineBanner } from "./offline-banner";
 
+function LogoutButton({ className }: { className: string }) {
+  return (
+    <form action={logout}>
+      <button type="submit" className={className}>
+        登出
+      </button>
+    </form>
+  );
+}
+
 // 電腦／平板（md 以上）：左側選單；手機：底部分頁列
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, userName }: { children: ReactNode; userName: string }) {
   const pathname = usePathname() ?? "/";
 
   return (
@@ -38,13 +49,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+        <div className="mt-auto flex items-center gap-2 border-t border-black/10 px-5 py-4 text-sm">
+          <span className="min-w-0 flex-1 truncate text-black/70">{userName}</span>
+          <LogoutButton className="rounded-md px-2 py-1 text-black/55 hover:bg-black/5" />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print sticky top-0 z-10 flex items-center gap-2 border-b border-black/10 bg-white/95 px-4 py-3 backdrop-blur md:hidden">
           <img src="/icons/icon-192.png" alt="" className="size-7 rounded-md" />
           <span className="font-bold">長富整合平台</span>
-          <span className="ml-auto text-xs text-black/50">115-1</span>
+          <span className="ml-auto truncate text-xs text-black/50">{userName}</span>
+          <LogoutButton className="rounded-md px-2 py-1 text-xs text-black/55 hover:bg-black/5" />
         </header>
         <OfflineBanner />
         <main className="flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">{children}</main>
