@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { PageHeader } from "@/components/page-header";
+import { SiteTabs } from "@/components/site-tabs";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite, farmerSuggestions, listGrainRecords } from "@/lib/data/grain";
@@ -34,30 +35,12 @@ export default async function GrainPage({ searchParams }: { searchParams: Promis
           </Link>
         }
       />
-      <nav aria-label="收購點" className="-mx-4 mb-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-        <ul className="flex w-max gap-1.5">
-          {sites.map((s) => {
-            const active = s.id === site.id;
-            const n = counts.get(s.id) ?? 0;
-            return (
-              <li key={s.id}>
-                <Link
-                  href={`/grain?site=${s.id}`}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
-                    active
-                      ? "border-brand-600 bg-brand-600 font-bold text-white"
-                      : "border-black/15 bg-white text-black/70 hover:border-brand-500"
-                  }`}
-                >
-                  {s.name}
-                  {n > 0 && <span className={`tabular text-xs ${active ? "text-white/80" : "text-black/40"}`}>{n}</span>}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <SiteTabs
+        basePath="/grain"
+        sites={sites.map((s) => ({ id: s.id, label: s.name }))}
+        activeId={site.id}
+        counts={counts}
+      />
       <GrainSheet key={site.id} site={site} initialRecords={records} suggestions={suggestions} />
     </>
   );

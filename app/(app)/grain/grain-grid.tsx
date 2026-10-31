@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Fragment, useEffect } from "react";
+import { GridCell, focusCell } from "@/components/grid-cell";
 import { ROWS_PER_PAGE } from "@/lib/calc";
 import { fieldText, type EditableField } from "@/lib/grain/fields";
 import { fmt, type Row, type SaveFn } from "./grain-sheet";
@@ -27,14 +28,7 @@ const COLUMNS: Column[] = [
 ];
 const EDIT_FIELDS = COLUMNS.filter((c) => c.kind === "edit").map((c) => c.field);
 
-function focusCell(r: number, c: number) {
-  const el = document.querySelector<HTMLInputElement>(`[data-grid="grain"] input[data-r="${r}"][data-c="${c}"]`);
-  if (el) {
-    el.focus();
-    el.select();
-  }
-  return !!el;
-}
+const GRID_ID = "grain";
 
 export function GrainGrid({
   rows,
@@ -55,7 +49,7 @@ export function GrainGrid({
   useEffect(() => {
     if (focusId === null) return;
     const r = rows.findIndex((row) => row.record.id === focusId);
-    if (r >= 0 && focusCell(r, EDIT_FIELDS.indexOf("name"))) onFocused();
+    if (r >= 0 && focusCell(GRID_ID, r, EDIT_FIELDS.indexOf("name"))) onFocused();
   }, [focusId, rows, onFocused]);
 
   let pageKg = 0;
@@ -63,7 +57,7 @@ export function GrainGrid({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-black/10 bg-white">
-      <table data-grid="grain" className="tabular w-full border-collapse text-[15px]">
+      <table data-grid={GRID_ID} className="tabular w-full border-collapse text-[15px]">
         <thead className="sticky top-0 z-10 bg-[#f1efe8] text-sm">
           <tr>
             <th className="w-10 border-b border-black/10 px-2 py-2 text-black/40">#</th>
@@ -97,7 +91,8 @@ export function GrainGrid({
                       </td>
                     ) : (
                       <td key={c.field} className="border-b border-l border-black/5 p-0">
-                        <Cell
+                        <GridCell
+                          gridId={GRID_ID}
                           row={r}
                           col={EDIT_FIELDS.indexOf(c.field)}
                           value={fieldText(row.record, c.field)}
@@ -105,6 +100,7 @@ export function GrainGrid({
                           numeric={c.numeric}
                           list={c.list}
                           label={`第 ${r + 1} 列 ${c.label}`}
+                          highlight={c.field === "collect" && row.record.collectOverride !== null}
                           onCommit={(raw) => save(row.record.id, [[c.field, raw]])}
                         />
                       </td>
@@ -156,93 +152,3 @@ function SubtotalRow({ label, kg }: { label: string; kg: number }) {
   );
 }
 
-function Cell({
-  row,
-  col,
-  value,
-  placeholder,
-  numeric,
-  list,
-  label,
-  onCommit,
-}: {
-  row: number;
-  col: number;
-  value: string;
-  placeholder?: string;
-  numeric?: boolean;
-  list?: string;
-  label: string;
-  onCommit: (raw: string) => Promise<string | null>;
-}) {
-  const [draft, setDraft] = useState(value);
-  // 只有使用者在這格打過字才存檔；游標只是經過（例如畫面剛帶出電話、還沒更新到這格）不算修改
-  const dirty = useRef(false);
-
-  // 資料從伺服器更新後同步（例如帶出電話地址）；正在打字的格子不動
-  useEffect(() => {
-    if (!dirty.current) setDraft(value);
-  }, [value]);
-
-  const commit = () => {
-    if (!dirty.current) return;
-    dirty.current = false;
-    if (draft === value) return;
-    onCommit(draft).then((err) => {
-      if (err) setDraft(value);
-    });
-  };
-
-  const move = (dr: number, dc: number) => {
-    commit();
-    focusCell(row + dr, col + dc);
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const el = e.currentTarget;
-    const atStart = el.selectionStart === 0 && el.selectionEnd === 0;
-    const atEnd = el.selectionStart === el.value.length;
-    if (e.key === "Enter") {
-      e.preventDefault();
-      move(e.shiftKey ? -1 : 1, 0);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      move(1, 0);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      move(-1, 0);
-    } else if (e.key === "ArrowLeft" && atStart) {
-      e.preventDefault();
-      move(0, -1);
-    } else if (e.key === "ArrowRight" && atEnd) {
-      e.preventDefault();
-      move(0, 1);
-    } else if (e.key === "Escape") {
-      dirty.current = false;
-      setDraft(value);
-    }
-  };
-
-  const overridden = col === EDIT_FIELDS.indexOf("collect") && value !== "";
-
-  return (
-    <input
-      data-r={row}
-      data-c={col}
-      aria-label={label}
-      value={draft}
-      list={list}
-      placeholder={placeholder}
-      inputMode={numeric ? "decimal" : undefined}
-      onChange={(e) => {
-        dirty.current = true;
-        setDraft(e.target.value);
-      }}
-      onBlur={commit}
-      onKeyDown={onKeyDown}
-      className={`w-full bg-transparent px-2 py-1.5 outline-none placeholder:text-inherit focus:bg-white focus:ring-2 focus:ring-inset focus:ring-brand-500 ${
-        numeric ? "text-right" : ""
-      } ${overridden ? "font-bold text-amber-700" : ""}`}
-    />
-  );
-}

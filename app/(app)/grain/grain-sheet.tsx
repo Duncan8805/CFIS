@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createGrainRecord, deleteGrainRecord, updateGrainRecord } from "@/app/actions/grain";
 import { calcGrain, effectiveRoundingMode, type RoundingMode } from "@/lib/calc";
 import type { FarmerSuggestion } from "@/lib/data/grain";
 import { parseField, type EditableField, type GrainPatch, type GrainRecordDto } from "@/lib/grain/fields";
+import { Toast, useToast } from "@/components/toast";
+import { useRecordSaver } from "@/components/use-record-saver";
 import { GrainCards } from "./grain-cards";
 import { GrainGrid } from "./grain-grid";
 
@@ -24,6 +26,8 @@ export interface Row {
 /** 儲存一筆的一或多個欄位；回傳錯誤訊息（成功時為 null） */
 export type SaveFn = (id: number, entries: [EditableField, string][]) => Promise<string | null>;
 
+const recordId = (r: GrainRecordDto) => r.id;
+
 export const fmt = (n: number | null) => (n === null ? "" : n.toLocaleString("zh-TW", { maximumFractionDigits: 2 }));
 
 export function GrainSheet({
@@ -36,33 +40,22 @@ export function GrainSheet({
   suggestions: FarmerSuggestion[];
 }) {
   const router = useRouter();
-  const [records, setRecords] = useState(initialRecords);
-  const [saving, setSaving] = useState<Set<number>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const { message: error, show: showError } = useToast();
   const [focusId, setFocusId] = useState<number | null>(null);
-  const errorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const recordsRef = useRef(records);
-  recordsRef.current = records;
-  // 同一筆的存檔排隊送出；還沒確認的欄位疊在伺服器回應上面，
-  // 避免較早送出的存檔回應把後來打的值蓋掉
-  const queues = useRef(new Map<number, Promise<unknown>>());
-  const pending = useRef(new Map<number, GrainPatch>());
+  const {
+    rows: records,
+    setRows: setRecords,
+    rowsRef: recordsRef,
+    saving,
+    apply,
+  } = useRecordSaver<GrainRecordDto, GrainPatch>({
+    initial: initialRecords,
+    idOf: recordId,
+    send: updateGrainRecord,
+    onError: showError,
+  });
 
   const suggestionByName = useMemo(() => new Map(suggestions.map((s) => [s.name, s])), [suggestions]);
-
-  const showError = useCallback((message: string) => {
-    setError(message);
-    clearTimeout(errorTimer.current);
-    errorTimer.current = setTimeout(() => setError(null), 5000);
-  }, []);
-
-  const markSaving = (id: number, on: boolean) =>
-    setSaving((prev) => {
-      const next = new Set(prev);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
 
   const save: SaveFn = useCallback(
     async (id, entries) => {
@@ -82,37 +75,9 @@ export function GrainSheet({
         const s = suggestionByName.get(patch.name);
         if (s) patch = { ...patch, phone: s.phone, address: s.address };
       }
-
-      pending.current.set(id, { ...pending.current.get(id), ...patch });
-      setRecords((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-      markSaving(id, true);
-
-      const run = () => updateGrainRecord(id, patch);
-      const job = (queues.current.get(id) ?? Promise.resolve()).then(run, run);
-      queues.current.set(id, job);
-      const result = await job;
-      if (queues.current.get(id) === job) {
-        queues.current.delete(id);
-        markSaving(id, false);
-      }
-
-      // 這次送出的欄位已有結果，從「未確認」移除（之後又改過的保留）
-      const stillPending = { ...pending.current.get(id) };
-      for (const key of Object.keys(patch) as (keyof GrainPatch)[]) {
-        if (stillPending[key] === patch[key]) delete stillPending[key];
-      }
-      pending.current.set(id, stillPending);
-
-      if (!result.ok) {
-        const revert = Object.fromEntries(Object.keys(patch).map((k) => [k, current[k as keyof GrainRecordDto]]));
-        setRecords((rs) => rs.map((r) => (r.id === id ? { ...r, ...revert, ...stillPending } : r)));
-        showError(result.error);
-        return result.error;
-      }
-      setRecords((rs) => rs.map((r) => (r.id === id ? { ...result.data, ...stillPending } : r)));
-      return null;
+      return apply(id, patch);
     },
-    [showError, suggestionByName],
+    [showError, suggestionByName, apply, recordsRef],
   );
 
   const add = useCallback(async () => {
@@ -184,14 +149,7 @@ export function GrainSheet({
         <GrainCards rows={rows} save={save} add={add} remove={remove} />
       </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="fixed inset-x-4 bottom-20 z-30 mx-auto max-w-md rounded-lg bg-red-700 px-4 py-3 text-sm text-white shadow-lg md:bottom-6"
-        >
-          {error}
-        </div>
-      )}
+      <Toast message={error} />
     </>
   );
 }

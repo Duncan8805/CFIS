@@ -1,19 +1,61 @@
 import type { Metadata } from "next";
-import { ComingSoon, PageHeader } from "@/components/page-header";
+import { asc, eq } from "drizzle-orm";
+import { PageHeader } from "@/components/page-header";
+import { SiteTabs } from "@/components/site-tabs";
+import { getDb, schema } from "@/lib/db";
+import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
+import { countBySite } from "@/lib/data/grain";
+import { listWeeklyRows } from "@/lib/data/weekly";
+import { WeeklySheet } from "./weekly-sheet";
 
 export const metadata: Metadata = { title: "週報表" };
 
-export default function WeeklyPage() {
+async function vendorName(): Promise<string> {
+  const [row] = await getDb()
+    .select({ value: schema.settings.value })
+    .from(schema.settings)
+    .where(eq(schema.settings.key, "report.vendorName"))
+    .limit(1);
+  return typeof row?.value === "string" ? row.value : "長富";
+}
+
+export default async function WeeklyPage({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
+  const period = await getCurrentPeriod();
+  const sites = await getDb()
+    .select({
+      id: schema.sites.id,
+      name: schema.sites.name,
+      weeklySheetName: schema.sites.weeklySheetName,
+      sellTo: schema.sites.sellTo,
+      remarkMode: schema.sites.remarkMode,
+      agentContact: schema.sites.agentContact,
+    })
+    .from(schema.sites)
+    .where(eq(schema.sites.active, true))
+    .orderBy(asc(schema.sites.sortOrder));
+  const counts = await countBySite(period.id);
+
+  const { site: siteParam } = await searchParams;
+  const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
+  const [rows, vendor] = await Promise.all([listWeeklyRows(period.id, site.id), vendorName()]);
+
   return (
     <>
-      <PageHeader title="週報表" description="姓名、公斤由公糧自動帶入" />
-      <ComingSoon
-        items={[
-          "依收購點顯示週報表，補進倉日期與水分",
-          "隨機產生水分（照原巨集的機率，保證至少一個 30）",
-          "列印模式：隱藏公斤與折算欄，每 26 筆小計",
-          "匯出 Excel",
-        ]}
+      <div className="print:hidden">
+        <PageHeader title="週報表" description={`${periodLabel(period)}・姓名與公斤由公糧帶入，這裡補日期與水分`} />
+      </div>
+      <SiteTabs
+        basePath="/weekly"
+        sites={sites.map((s) => ({ id: s.id, label: s.weeklySheetName }))}
+        activeId={site.id}
+        counts={counts}
+      />
+      <WeeklySheet
+        key={site.id}
+        site={site}
+        period={{ rocYear: period.rocYear, term: period.term }}
+        vendor={vendor}
+        initialRows={rows}
       />
     </>
   );

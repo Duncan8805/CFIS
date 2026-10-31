@@ -40,3 +40,60 @@ body {
     background: #fff;
   }
 }
+
+/* 週報表列印：照 Excel 的版面（A4 直印、標楷體） */
+@page {
+  size: A4 portrait;
+  margin: 18mm 18mm 19mm;
+}
+.weekly-print {
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "Kaiti TC", serif;
+  color: #000;
+}
+.weekly-print .print-page {
+  break-after: page;
+}
+.weekly-print .print-page:last-child {
+  break-after: auto;
+}
+.weekly-print h1 {
+  margin: 0 0 2mm;
+  font-size: 12pt;
+  font-weight: normal;
+  text-align: center;
+  letter-spacing: 0.5pt;
+}
+.weekly-print h1 small {
+  margin-left: 6mm;
+  font-size: 10pt;
+}
+.weekly-print table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 11pt;
+}
+.weekly-print th,
+.weekly-print td {
+  border: 0.6pt solid #000;
+  padding: 0 1.2mm;
+  height: 8.2mm;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.weekly-print th {
+  height: 13mm;
+  font-weight: normal;
+  font-size: 10.5pt;
+  line-height: 1.25;
+}
+.weekly-print td.num {
+  font-variant-numeric: tabular-nums;
+}
+.weekly-print td.small {
+  font-size: 9pt;
+}
+.weekly-print tr.total td {
+  font-weight: bold;
+}

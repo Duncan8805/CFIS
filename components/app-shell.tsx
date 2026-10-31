@@ -63,7 +63,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
           <LogoutButton className="rounded-md px-2 py-1 text-xs text-black/55 hover:bg-black/5" />
         </header>
         <OfflineBanner />
-        <main className="flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">{children}</main>
+        <main className="flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6 print:p-0">{children}</main>
       </div>
 
       <nav className="no-print pb-safe fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-black/10 bg-white md:hidden">
