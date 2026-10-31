@@ -41,6 +41,149 @@ body {
   }
 }
 
+/* 收款單：照原本「收款單生產器(新).html」的版面，A4 切 6 張（2 欄 × 3 列，每張 105 × 99mm） */
+@page receipt {
+  size: A4;
+  margin: 0;
+}
+.receipts .page {
+  page: receipt;
+  width: 210mm;
+  height: 297mm;
+  background: #fff;
+  margin: 0 auto 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+}
+.receipts .slip {
+  border: 1px dashed #bbb;
+  padding: 6mm;
+  font-size: 11pt;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.receipts .slip.empty {
+  border-color: #eee;
+}
+.receipts .slip .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 3mm;
+}
+.receipts .slip .name {
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  flex: none;
+}
+.receipts .slip .contact {
+  font-size: 11.5pt;
+  font-weight: 700;
+  text-align: right;
+  line-height: 1.35;
+  white-space: pre-line;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.receipts .slip .addr {
+  margin-top: 1.5mm;
+  font-size: 11pt;
+  min-height: 1.2em;
+}
+.receipts .slip .calc {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3mm;
+  font-variant-numeric: tabular-nums;
+}
+.receipts .slip .calc > div {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5mm;
+}
+.receipts .slip .calc .cell,
+.receipts .slip .calc .op {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.receipts .slip .calc .cell {
+  min-width: 22mm;
+}
+.receipts .slip .calc .op {
+  min-width: 6mm;
+}
+.receipts .slip .calc .v {
+  font-size: 15pt;
+}
+.receipts .slip .calc .cell .v {
+  display: block;
+  width: 100%;
+  text-align: right;
+}
+.receipts .slip .calc .lbl {
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: #666;
+  margin-top: 0.5mm;
+  min-height: 9.5pt;
+}
+.receipts .slip .bottom {
+  margin-top: 1.5mm;
+}
+.receipts .slip .accts-front {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #444;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.receipts .slip .accts-front .acct-item,
+.receipts .slip .accts-front .org,
+.receipts .slip .accts-front .line2 {
+  display: block;
+}
+.receipts .slip .accts-front .acct-item + .acct-item {
+  margin-top: 1.5mm;
+}
+.receipts .slip .accts-front .org {
+  color: #222;
+}
+.receipts .slip .accts-front .no {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+.receipts .slip .front-shou {
+  display: block;
+  text-align: right;
+  margin-top: 1.5mm;
+  font-size: 15pt;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@media print {
+  .receipts .page {
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+  }
+  .receipts .page:last-child {
+    break-after: auto;
+  }
+  .receipts .slip {
+    border-color: #ccc;
+  }
+}
+
 /* 週報表列印：照 Excel 的版面（A4 直印、標楷體） */
 @page {
   size: A4 portrait;
