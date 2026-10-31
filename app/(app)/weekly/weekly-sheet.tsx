@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { setMoistures, updateWeeklyEntry } from "@/app/actions/weekly";
-import { calcWeekly, randomMoistures, weeklyRemark, type RemarkMode } from "@/lib/calc";
+import { calcWeekly, randomMoistures, weeklyRemark, type MoistureRate, type RemarkMode } from "@/lib/calc";
 import {
   parseWeeklyField,
   type WeeklyDefaults,
@@ -43,11 +43,14 @@ export function WeeklySheet({
   site,
   period,
   vendor,
+  moistureRates,
   initialRows,
 }: {
   site: WeeklySite;
   period: { rocYear: number; term: number };
   vendor: string;
+  /** 水分折算率表（設定頁可改） */
+  moistureRates: MoistureRate[];
   initialRows: WeeklyRowDto[];
 }) {
   const { message: error, show: showError } = useToast();
@@ -74,10 +77,10 @@ export function WeeklySheet({
   const wrows: WRow[] = useMemo(
     () =>
       rows.map((row) => {
-        const { rate, wetQuantity } = calcWeekly({ kg: row.kg, moisture: row.moisture });
+        const { rate, wetQuantity } = calcWeekly({ kg: row.kg, moisture: row.moisture }, moistureRates);
         return { row, defaults: defaultsFor(row), rate, wetQuantity, saving: saving.has(row.entryId) };
       }),
-    [rows, saving, defaultsFor],
+    [rows, saving, defaultsFor, moistureRates],
   );
 
   const save: WeeklySaveFn = useCallback(

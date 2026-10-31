@@ -1,4 +1,4 @@
-import { calcGrain, type RoundingMode, type RemarkMode, weeklyRemark } from "@/lib/calc";
+import { calcGrain, DEFAULT_GRAIN_RATES, type GrainRates, type RoundingMode, type RemarkMode, weeklyRemark } from "@/lib/calc";
 import type { GrainRow, WeeklyRow } from "./excel";
 
 // 把解析出來的公糧列與週報表列配對成「匯入計畫」，並列出所有差異讓使用者確認。
@@ -122,8 +122,8 @@ function matchWeekly(grain: GrainRow[], weekly: WeeklyRow[]): (WeeklyRow | null)
   return result;
 }
 
-function calcDiffs(g: GrainRow, mode: RoundingMode) {
-  const r = calcGrain({ kg: g.kg, fen: g.fen, deposit: g.deposit, collectOverride: g.collectOverride }, undefined, mode);
+function calcDiffs(g: GrainRow, mode: RoundingMode, rates: GrainRates) {
+  const r = calcGrain({ kg: g.kg, fen: g.fen, deposit: g.deposit, collectOverride: g.collectOverride }, rates, mode);
   const pairs: [string, number | null, number | null][] = [
     ["利", g.excel.interest, r.interest],
     ["運費", g.excel.freight, r.freight],
@@ -137,11 +137,11 @@ function calcDiffs(g: GrainRow, mode: RoundingMode) {
  * 照每一列 Excel 原本的算法：收購點的捨入方式算不出 Excel 的值、換另一種就對時，
  * 這一筆記住另一種（回傳值）。兩種都對不上才回報 calc_mismatch。
  */
-function detectRounding(g: GrainRow, siteMode: RoundingMode, issues: Issue[]): RoundingMode | null {
-  const diffs = calcDiffs(g, siteMode);
+function detectRounding(g: GrainRow, siteMode: RoundingMode, rates: GrainRates, issues: Issue[]): RoundingMode | null {
+  const diffs = calcDiffs(g, siteMode, rates);
   if (!diffs.length) return null;
   const other: RoundingMode = siteMode === "truncate" ? "none" : "truncate";
-  if (!calcDiffs(g, other).length) return other;
+  if (!calcDiffs(g, other, rates).length) return other;
   issues.push({
     kind: "calc_mismatch",
     sheet: g.sheet,
@@ -151,7 +151,12 @@ function detectRounding(g: GrainRow, siteMode: RoundingMode, issues: Issue[]): R
   return null;
 }
 
-export function buildImportPlan(grainRows: GrainRow[], weeklyRows: WeeklyRow[], sites: SiteConfig[]): ImportPlan {
+export function buildImportPlan(
+  grainRows: GrainRow[],
+  weeklyRows: WeeklyRow[],
+  sites: SiteConfig[],
+  rates: GrainRates = DEFAULT_GRAIN_RATES,
+): ImportPlan {
   const bySheet = <T extends { sheet: string }>(rows: T[]) => {
     const m = new Map<string, T[]>();
     for (const r of rows) m.set(r.sheet, [...(m.get(r.sheet) ?? []), r]);
@@ -189,7 +194,7 @@ export function buildImportPlan(grainRows: GrainRow[], weeklyRows: WeeklyRow[], 
         : null;
 
     const records: PlannedRecord[] = grain.map((g, i) => {
-      const roundingMode = detectRounding(g, site.roundingMode, issues);
+      const roundingMode = detectRounding(g, site.roundingMode, rates, issues);
       if (/^\d+$/.test(g.name)) {
         issues.push({ kind: "suspicious_name", sheet, row: g.row, message: `姓名是「${g.name}」` });
       }

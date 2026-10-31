@@ -6,18 +6,10 @@ import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite } from "@/lib/data/grain";
 import { listWeeklyRows } from "@/lib/data/weekly";
+import { getCalcSettings } from "@/lib/data/settings";
 import { WeeklySheet } from "./weekly-sheet";
 
 export const metadata: Metadata = { title: "週報表" };
-
-async function vendorName(): Promise<string> {
-  const [row] = await getDb()
-    .select({ value: schema.settings.value })
-    .from(schema.settings)
-    .where(eq(schema.settings.key, "report.vendorName"))
-    .limit(1);
-  return typeof row?.value === "string" ? row.value : "長富";
-}
 
 export default async function WeeklyPage({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
   const period = await getCurrentPeriod();
@@ -37,7 +29,7 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
 
   const { site: siteParam } = await searchParams;
   const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
-  const [rows, vendor] = await Promise.all([listWeeklyRows(period.id, site.id), vendorName()]);
+  const [rows, settings] = await Promise.all([listWeeklyRows(period.id, site.id), getCalcSettings()]);
 
   return (
     <>
@@ -54,7 +46,8 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
         key={site.id}
         site={site}
         period={{ rocYear: period.rocYear, term: period.term }}
-        vendor={vendor}
+        vendor={settings.vendorName}
+        moistureRates={settings.moistureRates}
         initialRows={rows}
       />
     </>

@@ -6,6 +6,7 @@ import { getDb, schema } from "@/lib/db";
 import { requireUser } from "@/lib/auth/session";
 import { getCurrentPeriod } from "@/lib/data/period";
 import { grainColumns } from "@/lib/data/grain";
+import { logError } from "@/lib/log";
 import type { GrainPatch, GrainRecordDto } from "@/lib/grain/fields";
 
 const g = schema.grainRecords;
@@ -70,7 +71,7 @@ export async function createGrainRecord(siteId: number, initial: GrainPatch = {}
     const record = await fetchRecord(id);
     return record ? { ok: true, data: record } : { ok: false, error: "新增後讀不到資料" };
   } catch (err) {
-    console.error("createGrainRecord", err);
+    logError("createGrainRecord", err);
     return { ok: false, error: "新增失敗，請再試一次" };
   }
 }
@@ -103,7 +104,7 @@ export async function updateGrainRecord(id: number, input: GrainPatch): Promise<
     const after = await fetchRecord(id);
     return after ? { ok: true, data: after } : { ok: false, error: "儲存後讀不到資料" };
   } catch (err) {
-    console.error("updateGrainRecord", err);
+    logError("updateGrainRecord", err);
     return { ok: false, error: "儲存失敗，請再試一次" };
   }
 }
@@ -122,7 +123,7 @@ export async function deleteGrainRecord(id: number): Promise<ActionResult<null>>
     });
     return { ok: true, data: null };
   } catch (err) {
-    console.error("deleteGrainRecord", err);
+    logError("deleteGrainRecord", err);
     return { ok: false, error: "刪除失敗，請再試一次" };
   }
 }

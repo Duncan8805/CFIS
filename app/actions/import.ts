@@ -3,21 +3,20 @@
 import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
-import { requireUser } from "@/lib/auth/session";
+import { requireAdmin } from "@/lib/auth/session";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import type { SiteConfig } from "@/lib/import/plan";
-
-async function requireAdmin() {
-  const user = await requireUser();
-  if (user.role !== "admin") throw new Error("只有管理員可以匯入資料");
-  return user;
-}
+import type { GrainRates } from "@/lib/calc";
+import { logError } from "@/lib/log";
+import { getCalcSettings } from "@/lib/data/settings";
 
 export interface ImportContext {
   periodLabel: string;
   sites: SiteConfig[];
   /** 各收購點本期已有的公糧筆數 */
   existing: Record<number, number>;
+  /** 驗證 Excel 計算時用的每分利、每公斤運費 */
+  rates: GrainRates;
 }
 
 export async function getImportContext(): Promise<ImportContext> {
@@ -42,8 +41,10 @@ export async function getImportContext(): Promise<ImportContext> {
     .from(schema.grainRecords)
     .where(eq(schema.grainRecords.periodId, period.id))
     .groupBy(schema.grainRecords.siteId);
+  const { rates } = await getCalcSettings();
   return {
     periodLabel: periodLabel(period),
+    rates,
     sites,
     existing: Object.fromEntries(counts.map((c) => [c.siteId, c.n])),
   };
@@ -156,7 +157,7 @@ export async function importSite(input: SiteImportInput): Promise<SiteImportResu
     });
     return { ok: true, imported: records.length, weekly: weeklyCount };
   } catch (err) {
-    console.error("import failed", siteId, err);
+    logError(`import site ${siteId}`, err);
     return { ok: false, error: "寫入資料庫失敗，這個收購點的資料沒有變動" };
   }
 }

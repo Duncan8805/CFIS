@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createGrainRecord, deleteGrainRecord, updateGrainRecord } from "@/app/actions/grain";
-import { calcGrain, effectiveRoundingMode, type RoundingMode } from "@/lib/calc";
+import { calcGrain, effectiveRoundingMode, type GrainRates, type RoundingMode } from "@/lib/calc";
 import type { FarmerSuggestion } from "@/lib/data/grain";
 import { parseField, type EditableField, type GrainPatch, type GrainRecordDto } from "@/lib/grain/fields";
 import { Toast, useToast } from "@/components/toast";
@@ -32,10 +32,13 @@ export const fmt = (n: number | null) => (n === null ? "" : n.toLocaleString("zh
 
 export function GrainSheet({
   site,
+  rates,
   initialRecords,
   suggestions,
 }: {
   site: SheetSite;
+  /** 每分利、每公斤運費（設定頁可改） */
+  rates: GrainRates;
   initialRecords: GrainRecordDto[];
   suggestions: FarmerSuggestion[];
 }) {
@@ -118,11 +121,11 @@ export function GrainSheet({
         saving: saving.has(record.id),
         calc: calcGrain(
           { kg: record.kg, fen: record.fen, deposit: record.deposit, collectOverride: record.collectOverride },
-          undefined,
+          rates,
           effectiveRoundingMode(record.roundingMode, site.roundingMode),
         ),
       })),
-    [records, saving, site.roundingMode],
+    [records, saving, site.roundingMode, rates],
   );
 
   const totalKg = rows.reduce((n, r) => n + (r.record.kg ?? 0), 0);

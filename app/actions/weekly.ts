@@ -6,6 +6,7 @@ import { getDb, schema } from "@/lib/db";
 import { requireUser } from "@/lib/auth/session";
 import { weeklyColumns } from "@/lib/data/weekly";
 import type { WeeklyPatch, WeeklyRowDto } from "@/lib/weekly/fields";
+import { logError } from "@/lib/log";
 import type { ActionResult } from "./grain";
 
 const w = schema.weeklyEntries;
@@ -58,7 +59,7 @@ export async function updateWeeklyEntry(entryId: number, input: WeeklyPatch): Pr
     const after = await fetchRow(entryId);
     return after ? { ok: true, data: after } : { ok: false, error: "儲存後讀不到資料" };
   } catch (err) {
-    console.error("updateWeeklyEntry", err);
+    logError("updateWeeklyEntry", err);
     return { ok: false, error: "儲存失敗，請再試一次" };
   }
 }
@@ -94,7 +95,7 @@ export async function setMoistures(
     });
     return { ok: true, data: parsed.data };
   } catch (err) {
-    console.error("setMoistures", err);
+    logError("setMoistures", err);
     return { ok: false, error: "水分寫入失敗，資料沒有變動" };
   }
 }

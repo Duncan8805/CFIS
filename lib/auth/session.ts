@@ -69,6 +69,13 @@ export async function requireUser(): Promise<CurrentUser> {
   return user;
 }
 
+/** 只有管理員能做的事（匯入、設定） */
+export async function requireAdmin(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (user.role !== "admin") throw new Error("只有管理員可以做這件事");
+  return user;
+}
+
 export async function destroySession(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;

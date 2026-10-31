@@ -6,6 +6,7 @@ import { calcGrain, effectiveRoundingMode } from "@/lib/calc";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite, listGrainRecords } from "@/lib/data/grain";
+import { getCalcSettings } from "@/lib/data/settings";
 import { ReceiptsClient } from "./receipts-client";
 import type { ReceiptData } from "./receipt-slip";
 
@@ -23,8 +24,9 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
 
   const { site: siteParam } = await searchParams;
   const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
-  const [records, accounts] = await Promise.all([
+  const [records, settings, accounts] = await Promise.all([
     listGrainRecords(period.id, site.id),
+    getCalcSettings(),
     db
       .select({
         id: schema.bankAccounts.id,
@@ -44,7 +46,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
     .map((r) => {
       const c = calcGrain(
         { kg: r.kg, fen: r.fen, deposit: r.deposit, collectOverride: r.collectOverride },
-        undefined,
+        settings.rates,
         effectiveRoundingMode(r.roundingMode, site.roundingMode),
       );
       return {

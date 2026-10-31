@@ -6,6 +6,7 @@ import { SiteTabs } from "@/components/site-tabs";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite, farmerSuggestions, listGrainRecords } from "@/lib/data/grain";
+import { getCalcSettings } from "@/lib/data/settings";
 import { GrainSheet } from "./grain-sheet";
 
 export const metadata: Metadata = { title: "公糧" };
@@ -22,7 +23,11 @@ export default async function GrainPage({ searchParams }: { searchParams: Promis
   // 沒指定收購點時，打開第一個有資料的
   const { site: siteParam } = await searchParams;
   const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
-  const [records, suggestions] = await Promise.all([listGrainRecords(period.id, site.id), farmerSuggestions()]);
+  const [records, suggestions, settings] = await Promise.all([
+    listGrainRecords(period.id, site.id),
+    farmerSuggestions(),
+    getCalcSettings(),
+  ]);
 
   return (
     <>
@@ -41,7 +46,7 @@ export default async function GrainPage({ searchParams }: { searchParams: Promis
         activeId={site.id}
         counts={counts}
       />
-      <GrainSheet key={site.id} site={site} initialRecords={records} suggestions={suggestions} />
+      <GrainSheet key={site.id} site={site} rates={settings.rates} initialRecords={records} suggestions={suggestions} />
     </>
   );
 }

@@ -44,7 +44,7 @@ export function ImportClient({ context }: { context: ImportContext }) {
     try {
       const grain = parseGrainWorkbook(await readWorkbook(grainFile));
       const weekly = weeklyFile ? parseWeeklyWorkbook(await readWorkbook(weeklyFile)) : { rows: [] };
-      const next = buildImportPlan(grain.rows, weekly.rows, context.sites);
+      const next = buildImportPlan(grain.rows, weekly.rows, context.sites, context.rates);
       if (!next.sites.length) throw new Error("這個檔案裡沒有任何收購點的工作表");
       setPlan(next);
       setSelected(new Set(next.sites.map((s) => s.siteId)));
