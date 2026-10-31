@@ -1,0 +1,1 @@
+ALTER TABLE `grain_records` ADD `rounding_mode` enum('truncate','none');

@@ -199,6 +199,7 @@ function SiteRow({
   const byKind = new Map<IssueKind, number>();
   for (const i of site.issues) byKind.set(i.kind, (byKind.get(i.kind) ?? 0) + 1);
   const kg = site.records.reduce((n, r) => n + (r.kg ?? 0), 0);
+  const ownRounding = site.records.filter((r) => r.roundingMode);
 
   return (
     <li className="px-4 py-3">
@@ -212,6 +213,11 @@ function SiteRow({
         <span className="tabular text-sm text-black/70">
           週報表 {site.weeklyMatched}/{site.records.length}
         </span>
+        {ownRounding.length > 0 && (
+          <span className="text-sm text-black/60">
+            {ownRounding.length} 筆照 Excel 改用{ownRounding[0].roundingMode === "truncate" ? "無條件捨去" : "不捨去"}
+          </span>
+        )}
         {existing > 0 && <span className="text-sm text-amber-700">系統已有 {existing} 筆</span>}
         {result && <span className={`text-sm ${result.startsWith("✓") ? "text-brand-700" : "text-red-700"}`}>{result}</span>}
       </div>

@@ -40,6 +40,8 @@ export interface PlannedRecord {
   fen: number | null;
   deposit: number | null;
   collectOverride: string | null;
+  /** 跟收購點設定不同時才有值：Excel 這一列用的是另一種捨入方式 */
+  roundingMode: RoundingMode | null;
   weekly: {
     intakeDate: string | null;
     moisture: number | null;
@@ -120,7 +122,7 @@ function matchWeekly(grain: GrainRow[], weekly: WeeklyRow[]): (WeeklyRow | null)
   return result;
 }
 
-function checkCalc(g: GrainRow, mode: RoundingMode, issues: Issue[]) {
+function calcDiffs(g: GrainRow, mode: RoundingMode) {
   const r = calcGrain({ kg: g.kg, fen: g.fen, deposit: g.deposit, collectOverride: g.collectOverride }, undefined, mode);
   const pairs: [string, number | null, number | null][] = [
     ["利", g.excel.interest, r.interest],
@@ -128,15 +130,25 @@ function checkCalc(g: GrainRow, mode: RoundingMode, issues: Issue[]) {
     ["先付", g.excel.prepaid, r.prepaid],
     ["收", g.excel.collect, r.collect],
   ];
-  const diffs = pairs.filter(([, excel, calc]) => excel !== null && calc !== null && Math.abs(excel - calc) > 0.005);
-  if (diffs.length) {
-    issues.push({
-      kind: "calc_mismatch",
-      sheet: g.sheet,
-      row: g.row,
-      message: `${g.name}：${diffs.map(([k, e, c]) => `${k} Excel ${e} / 系統 ${c}`).join("，")}`,
-    });
-  }
+  return pairs.filter(([, excel, calc]) => excel !== null && calc !== null && Math.abs(excel - calc) > 0.005);
+}
+
+/**
+ * 照每一列 Excel 原本的算法：收購點的捨入方式算不出 Excel 的值、換另一種就對時，
+ * 這一筆記住另一種（回傳值）。兩種都對不上才回報 calc_mismatch。
+ */
+function detectRounding(g: GrainRow, siteMode: RoundingMode, issues: Issue[]): RoundingMode | null {
+  const diffs = calcDiffs(g, siteMode);
+  if (!diffs.length) return null;
+  const other: RoundingMode = siteMode === "truncate" ? "none" : "truncate";
+  if (!calcDiffs(g, other).length) return other;
+  issues.push({
+    kind: "calc_mismatch",
+    sheet: g.sheet,
+    row: g.row,
+    message: `${g.name}：${diffs.map(([k, e, c]) => `${k} Excel ${e} / 系統 ${c}`).join("，")}`,
+  });
+  return null;
 }
 
 export function buildImportPlan(grainRows: GrainRow[], weeklyRows: WeeklyRow[], sites: SiteConfig[]): ImportPlan {
@@ -177,7 +189,7 @@ export function buildImportPlan(grainRows: GrainRow[], weeklyRows: WeeklyRow[], 
         : null;
 
     const records: PlannedRecord[] = grain.map((g, i) => {
-      checkCalc(g, site.roundingMode, issues);
+      const roundingMode = detectRounding(g, site.roundingMode, issues);
       if (/^\d+$/.test(g.name)) {
         issues.push({ kind: "suspicious_name", sheet, row: g.row, message: `姓名是「${g.name}」` });
       }
@@ -229,6 +241,7 @@ export function buildImportPlan(grainRows: GrainRow[], weeklyRows: WeeklyRow[], 
         fen: g.fen,
         deposit: g.deposit,
         collectOverride: g.collectOverride,
+        roundingMode,
         weekly: w
           ? {
               intakeDate: w.intakeDate,

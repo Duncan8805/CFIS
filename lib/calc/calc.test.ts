@@ -3,6 +3,7 @@ import fixture from "./__fixtures__/dongshi-zhen.json";
 import {
   calcGrain,
   calcWeekly,
+  effectiveRoundingMode,
   lookupMoistureRate,
   paginate,
   randomMoistures,
@@ -31,6 +32,14 @@ describe("公糧計算：不捨去的收購點（朴子阿財）", () => {
       expect(r.prepaid).toBeCloseTo(row.expected.prepaid, 6);
       expect(r.collect).toBeCloseTo(row.expected.collect, 6);
     });
+  });
+});
+
+describe("逐筆捨入方式", () => {
+  it("紀錄有設定就用紀錄的，否則用收購點的", () => {
+    expect(effectiveRoundingMode("truncate", "none")).toBe("truncate");
+    expect(effectiveRoundingMode(null, "none")).toBe("none");
+    expect(effectiveRoundingMode(undefined, "truncate")).toBe("truncate");
   });
 });
 

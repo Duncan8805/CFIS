@@ -102,6 +102,8 @@ export const grainRecords = mysqlTable(
     deposit: int("deposit"),
     /** 收 欄的手動文字，例如「扣」「5/24扣」 */
     collectOverride: varchar("collect_override", { length: 20 }),
+    /** 這一筆自己的捨入方式；空白時用收購點的設定（鹿草第 111–116 列就跟整張表不同） */
+    roundingMode: mysqlEnum("rounding_mode", ["truncate", "none"]),
     updatedBy: ref("updated_by"),
     ...timestamps,
   },

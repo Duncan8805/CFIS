@@ -21,6 +21,11 @@ export interface GrainRates {
 
 export const DEFAULT_GRAIN_RATES: GrainRates = { interestPerFen: 4000, freightPerKg: 0.35 };
 
+/** 這一筆實際用的捨入方式：紀錄自己有設定就用紀錄的，否則用收購點的 */
+export function effectiveRoundingMode(record: RoundingMode | null | undefined, site: RoundingMode): RoundingMode {
+  return record ?? site;
+}
+
 export interface GrainInput {
   kg: number | null;
   fen: number | null;

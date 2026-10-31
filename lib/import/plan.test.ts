@@ -130,9 +130,27 @@ describe("匯入計畫：備註與繳售業者", () => {
 });
 
 describe("匯入計畫：計算驗證", () => {
+  it("同一張表混用算法：照每一列 Excel 原本的算法記住，不回報問題", () => {
+    const noneSite = { ...site, roundingMode: "none" as const };
+    const plan = buildImportPlan(
+      [
+        // 這列 Excel 沒捨去：1604.8 / 456.4（跟收購點設定相同）
+        grain(3, "甲", 1304, { excel: { interest: 1604.8, freight: 456.4, prepaid: 1148.4, collect: null } }),
+        // 這列 Excel 用了 ROUNDDOWN：1604 / 456
+        grain(4, "乙", 1304, { excel: { interest: 1604, freight: 456, prepaid: 1148, collect: null } }),
+      ],
+      [],
+      [noneSite],
+    );
+    const p = plan.sites[0];
+    expect(p.issues).toEqual([]);
+    expect(p.records.map((r) => r.roundingMode)).toEqual([null, "truncate"]);
+  });
+
   it("Excel 的利跟系統算的不同時回報 calc_mismatch", () => {
     const plan = buildImportPlan(
-      [grain(3, "甲", 1304, { excel: { interest: 1604.8, freight: 456, prepaid: 1148, collect: null } })],
+      // 利 9999 兩種算法都算不出來
+      [grain(3, "甲", 1304, { excel: { interest: 9999, freight: 456, prepaid: 1148, collect: null } })],
       [],
       [site],
     );

@@ -70,6 +70,7 @@ const SiteImportSchema = z.object({
         fen: z.number().min(0).max(9999).nullable(),
         deposit: z.number().int().min(-100_000_000).max(100_000_000).nullable(),
         collectOverride: text(20),
+        roundingMode: z.enum(["truncate", "none"]).nullable(),
         weekly: z
           .object({
             intakeDate: isoDate,
@@ -124,6 +125,7 @@ export async function importSite(input: SiteImportInput): Promise<SiteImportResu
             fen: r.fen,
             deposit: r.deposit,
             collectOverride: r.collectOverride,
+            roundingMode: r.roundingMode,
             updatedBy: user.id,
           })),
         );
