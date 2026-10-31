@@ -5,3 +5,5 @@ next-env.d.ts
 /dist/
 .vinext/
 .cloudflare/
+.dev.vars
+*.tsbuildinfo

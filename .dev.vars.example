@@ -1,0 +1,3 @@
+# 複製成 .dev.vars 並填入實際值（.dev.vars 不會進 git）
+# TiDB Cloud → Cluster → Connect → 選「Serverless Driver」或「General」取得連線字串
+DATABASE_URL=mysql://USER:PASSWORD@HOST:4000/cfis

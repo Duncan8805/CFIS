@@ -1,17 +1,42 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #eef6f1;
+  --color-brand-100: #d5e9dd;
+  --color-brand-500: #3d8a63;
+  --color-brand-600: #2f6f4f;
+  --color-brand-700: #255a40;
+  --color-paper: #f6f5f1;
+  --font-sans: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
   color-scheme: light;
-  background: #f8fafc;
-  color: #111827;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
   margin: 0;
+  background: var(--color-paper);
+  color: #1a1a1a;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
 }
 
-a {
-  color: inherit;
+/* 數字欄位對齊 */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* iPhone 底部手勢列的安全區 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }

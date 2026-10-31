@@ -1,0 +1,363 @@
+{
+ "source": "東石珍（使用者指定的比對基準），只保留數字欄位",
+ "grain": [
+  {
+   "kg": 1304,
+   "fen": 0.4012,
+   "deposit": 36512,
+   "expected": {
+    "interest": 1604,
+    "freight": 456,
+    "prepaid": 1148,
+    "collect": 35364
+   }
+  },
+  {
+   "kg": 10267,
+   "fen": 1.7701,
+   "deposit": 280705,
+   "expected": {
+    "interest": 7080,
+    "freight": 3593,
+    "prepaid": 3487,
+    "collect": 277218
+   }
+  },
+  {
+   "kg": 2614,
+   "fen": 0.8044,
+   "deposit": 73192,
+   "expected": {
+    "interest": 3217,
+    "freight": 914,
+    "prepaid": 2303,
+    "collect": 70889
+   }
+  },
+  {
+   "kg": 3042,
+   "fen": 0.9361,
+   "deposit": 85176,
+   "expected": {
+    "interest": 3744,
+    "freight": 1064,
+    "prepaid": 2680,
+    "collect": 82496
+   }
+  },
+  {
+   "kg": 8960,
+   "fen": 1.5449,
+   "deposit": 244972,
+   "expected": {
+    "interest": 6179,
+    "freight": 3136,
+    "prepaid": 3043,
+    "collect": 241929
+   }
+  },
+  {
+   "kg": 1354,
+   "fen": 0.4166,
+   "deposit": 37912,
+   "expected": {
+    "interest": 1666,
+    "freight": 473,
+    "prepaid": 1193,
+    "collect": 36719
+   }
+  },
+  {
+   "kg": 5656,
+   "fen": 0.9752,
+   "deposit": 154638,
+   "expected": {
+    "interest": 3900,
+    "freight": 1979,
+    "prepaid": 1921,
+    "collect": 152717
+   }
+  },
+  {
+   "kg": 7933,
+   "fen": 1.3677,
+   "deposit": 216892,
+   "expected": {
+    "interest": 5470,
+    "freight": 2776,
+    "prepaid": 2694,
+    "collect": 214198
+   }
+  },
+  {
+   "kg": 2426,
+   "fen": 0.7464,
+   "deposit": 67928,
+   "expected": {
+    "interest": 2985,
+    "freight": 849,
+    "prepaid": 2136,
+    "collect": 65792
+   }
+  },
+  {
+   "kg": 908,
+   "fen": 0.2793,
+   "deposit": 25424,
+   "expected": {
+    "interest": 1117,
+    "freight": 317,
+    "prepaid": 800,
+    "collect": 24624
+   }
+  },
+  {
+   "kg": 484,
+   "fen": 0.1488,
+   "deposit": 13552,
+   "expected": {
+    "interest": 595,
+    "freight": 169,
+    "prepaid": 426,
+    "collect": 13126
+   }
+  },
+  {
+   "kg": 1339,
+   "fen": 0.412,
+   "deposit": 37492,
+   "expected": {
+    "interest": 1648,
+    "freight": 468,
+    "prepaid": 1180,
+    "collect": 36312
+   }
+  },
+  {
+   "kg": 791,
+   "fen": 0.2434,
+   "deposit": 22148,
+   "expected": {
+    "interest": 973,
+    "freight": 276,
+    "prepaid": 697,
+    "collect": 21451
+   }
+  },
+  {
+   "kg": 375,
+   "fen": 0.1154,
+   "deposit": 10500,
+   "expected": {
+    "interest": 461,
+    "freight": 131,
+    "prepaid": 330,
+    "collect": 10170
+   }
+  }
+ ],
+ "weekly": [
+  {
+   "kg": 1304,
+   "moisture": 26,
+   "expected": {
+    "rate": 0.81,
+    "wetQuantity": 1610
+   }
+  },
+  {
+   "kg": 10267,
+   "moisture": 25,
+   "expected": {
+    "rate": 0.82,
+    "wetQuantity": 12521
+   }
+  },
+  {
+   "kg": 2614,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 3268
+   }
+  },
+  {
+   "kg": 3042,
+   "moisture": 30,
+   "expected": {
+    "rate": 0.76,
+    "wetQuantity": 4003
+   }
+  },
+  {
+   "kg": 8960,
+   "moisture": 28,
+   "expected": {
+    "rate": 0.79,
+    "wetQuantity": 11342
+   }
+  },
+  {
+   "kg": 1354,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 1693
+   }
+  },
+  {
+   "kg": 5656,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 7070
+   }
+  },
+  {
+   "kg": 7933,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 9916
+   }
+  },
+  {
+   "kg": 2426,
+   "moisture": 24,
+   "expected": {
+    "rate": 0.83,
+    "wetQuantity": 2923
+   }
+  },
+  {
+   "kg": 908,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 1135
+   }
+  },
+  {
+   "kg": 484,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 605
+   }
+  },
+  {
+   "kg": 1339,
+   "moisture": 28,
+   "expected": {
+    "rate": 0.79,
+    "wetQuantity": 1695
+   }
+  },
+  {
+   "kg": 791,
+   "moisture": 26,
+   "expected": {
+    "rate": 0.81,
+    "wetQuantity": 977
+   }
+  },
+  {
+   "kg": 375,
+   "moisture": 27,
+   "expected": {
+    "rate": 0.8,
+    "wetQuantity": 469
+   }
+  }
+ ],
+ "grainNoTruncate": [
+  {
+   "kg": 673,
+   "fen": 0.2072,
+   "deposit": 18929,
+   "expected": {
+    "interest": 828.8,
+    "freight": 235.54999999999998,
+    "prepaid": 593.25,
+    "collect": 18335.75
+   }
+  },
+  {
+   "kg": 1261,
+   "fen": 0.3879,
+   "deposit": 35467,
+   "expected": {
+    "interest": 1551.6000000000001,
+    "freight": 441.34999999999997,
+    "prepaid": 1110.2500000000002,
+    "collect": 34356.75
+   }
+  },
+  {
+   "kg": 6031,
+   "fen": 1.8556,
+   "deposit": 169628,
+   "expected": {
+    "interest": 7422.4,
+    "freight": 2110.85,
+    "prepaid": 5311.549999999999,
+    "collect": 164316.45
+   }
+  },
+  {
+   "kg": 631,
+   "fen": 0.194,
+   "deposit": 17748,
+   "expected": {
+    "interest": 776,
+    "freight": 220.85,
+    "prepaid": 555.15,
+    "collect": 17192.85
+   }
+  },
+  {
+   "kg": 911,
+   "fen": 0.2803,
+   "deposit": 25623,
+   "expected": {
+    "interest": 1121.2,
+    "freight": 318.84999999999997,
+    "prepaid": 802.3500000000001,
+    "collect": 24820.65
+   }
+  },
+  {
+   "kg": 1540,
+   "fen": 1.4739,
+   "deposit": 43314,
+   "expected": {
+    "interest": 5895.6,
+    "freight": 539,
+    "prepaid": 5356.6,
+    "collect": 37957.4
+   }
+  },
+  {
+   "kg": 2986,
+   "fen": 0.9188,
+   "deposit": 83984,
+   "expected": {
+    "interest": 3675.2,
+    "freight": 1045.1,
+    "prepaid": 2630.1,
+    "collect": 81353.9
+   }
+  },
+  {
+   "kg": 3090,
+   "fen": 0.9509,
+   "deposit": 86909,
+   "expected": {
+    "interest": 3803.6,
+    "freight": 1081.5,
+    "prepaid": 2722.1,
+    "collect": 84186.9
+   }
+  }
+ ]
+}
