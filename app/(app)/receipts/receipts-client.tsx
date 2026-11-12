@@ -53,7 +53,7 @@ export function ReceiptsClient({
 
   return (
     <>
-      <section className="mb-4 flex flex-col gap-3 rounded-xl border border-black/10 bg-white p-4 text-sm print:hidden">
+      <section className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 text-sm print:hidden">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <span className="font-bold">{siteName}</span>
           <label className="flex items-center gap-2">
@@ -65,8 +65,8 @@ export function ReceiptsClient({
             />
             略過金額為 0 的
           </label>
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 border-black/10 sm:border-l sm:pl-4">
-            <span className="text-black/55">帳號：</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 border-line sm:border-l sm:pl-4">
+            <span className="text-muted">帳號：</span>
             {accounts.map((a) => (
               <label key={a.id} className="flex items-center gap-2">
                 <input
@@ -78,7 +78,7 @@ export function ReceiptsClient({
                 {a.org}
               </label>
             ))}
-            {accounts.length === 0 && <span className="text-amber-700">還沒有設定農會帳號</span>}
+            {accounts.length === 0 && <span className="text-warn-700">還沒有設定農會帳號</span>}
           </span>
           <button
             type="button"
@@ -90,7 +90,7 @@ export function ReceiptsClient({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-black/60">
+        <div className="flex flex-wrap items-center gap-3 text-muted">
           <span className="tabular">
             要印 {selected.length} 張，共 {pages.length} 頁 A4
             {candidates.length < receipts.length && `（略過 ${receipts.length - candidates.length} 筆金額為 0）`}
@@ -103,13 +103,13 @@ export function ReceiptsClient({
         {listOpen && (
           <div>
             <div className="mb-2 flex gap-3">
-              <button type="button" onClick={() => setExcluded(new Set())} className="rounded-md border border-black/15 px-2 py-1">
+              <button type="button" onClick={() => setExcluded(new Set())} className="rounded-md border border-field px-2 py-1">
                 全選
               </button>
               <button
                 type="button"
                 onClick={() => setExcluded(new Set(candidates.map((r) => r.id)))}
-                className="rounded-md border border-black/15 px-2 py-1"
+                className="rounded-md border border-field px-2 py-1"
               >
                 全不選
               </button>
@@ -125,7 +125,7 @@ export function ReceiptsClient({
                       className="size-4 accent-brand-600"
                     />
                     <span className="truncate">{r.name}</span>
-                    <span className="tabular ml-auto text-xs text-black/45">{r.collectText ?? money(r.collect)}</span>
+                    <span className="tabular ml-auto text-xs text-faint">{r.collectText ?? money(r.collect)}</span>
                   </label>
                 </li>
               ))}
@@ -135,7 +135,7 @@ export function ReceiptsClient({
       </section>
 
       {selected.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-black/20 bg-white p-6 text-center text-sm text-black/55 print:hidden">
+        <p className="rounded-xl border border-dashed border-field bg-white p-6 text-center text-sm text-muted print:hidden">
           {receipts.length === 0 ? "這個收購點還沒有公糧資料。" : "沒有要印的收款單。"}
         </p>
       ) : (

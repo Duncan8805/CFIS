@@ -28,13 +28,23 @@ const timestamps = {
     .onUpdateNow(),
 };
 
-/** 期別，例如 115 年第 1 期 */
+/** 期別，例如 115 年第 1 期。計算參數每一期各一組，新增期別時從上一期複製。 */
 export const periods = mysqlTable(
   "periods",
   {
     id: id(),
     rocYear: smallint("roc_year").notNull(),
     term: tinyint("term").notNull(),
+    /** 每分利（利 = 分 × 這個數字）；空白時用系統設定 */
+    interestPerFen: decimal("interest_per_fen", { precision: 12, scale: 4, mode: "number" }),
+    /** 每公斤運費；空白時用系統設定 */
+    freightPerKg: decimal("freight_per_kg", { precision: 8, scale: 4, mode: "number" }),
+    /** 每公頃計畫收購公斤（農會核定通知單），用來算建議的計畫收購量 */
+    planKgPerHa: int("plan_kg_per_ha"),
+    /** 每公頃輔導收購公斤 */
+    guideKgPerHa: int("guide_kg_per_ha"),
+    /** 這一期的水分折算率表 [{ moisture, rate }]；空白時用 moisture_rates 表 */
+    moistureRates: json("moisture_rates").$type<{ moisture: number; rate: number }[]>(),
     ...timestamps,
   },
   (t) => [uniqueIndex("periods_year_term").on(t.rocYear, t.term)],
@@ -63,17 +73,19 @@ export const sites = mysqlTable(
   (t) => [uniqueIndex("sites_name").on(t.name)],
 );
 
-/** 農民名冊：輸入時自動帶出電話、地址 */
+/** 農民名冊：每位農民一筆，用檔號辨認（所有期別共用）。打檔號時帶出姓名、電話、地址。 */
 export const farmers = mysqlTable(
   "farmers",
   {
     id: id(),
+    /** 檔號：1 個英文字母加 8 位數字（例：Q11101404），跟身分證一樣每人一個；還沒填時為空 */
+    fileNo: varchar("file_no", { length: 9 }),
     name: varchar("name", { length: 32 }).notNull(),
     phone: varchar("phone", { length: 100 }),
     address: varchar("address", { length: 200 }),
     ...timestamps,
   },
-  (t) => [index("farmers_name").on(t.name)],
+  (t) => [uniqueIndex("farmers_file_no").on(t.fileNo), index("farmers_name").on(t.name)],
 );
 
 /** 公糧紀錄（公糧 Excel 的一列）。姓名、電話、地址存在紀錄上，跟 Excel 一樣每期各自保留。 */
@@ -92,11 +104,18 @@ export const grainRecords = mysqlTable(
     seq: int("seq").notNull(),
     /** 編號 */
     code: varchar("code", { length: 20 }),
+    /** 檔號（同農民名冊）；紀錄上另存一份，過去期別保留當時的值 */
+    fileNo: varchar("file_no", { length: 9 }),
     name: varchar("name", { length: 32 }).notNull(),
     phone: varchar("phone", { length: 100 }),
     address: varchar("address", { length: 200 }),
+    /** 公斤 = 計畫收購 + 輔導收購（餘糧不算）。兩欄都空白時保留原本的公斤（舊 Excel 匯入的資料） */
     kg: int("kg"),
-    /** 分，4 位小數 */
+    /** 計畫收購（公斤），照農會核定通知單 */
+    planKg: int("plan_kg"),
+    /** 輔導收購（公斤） */
+    guideKg: int("guide_kg"),
+    /** 分＝核定面積（公頃），4 位小數 */
     fen: decimal("fen", { precision: 8, scale: 4, mode: "number" }),
     /** 入簿 */
     deposit: int("deposit"),
@@ -107,7 +126,7 @@ export const grainRecords = mysqlTable(
     updatedBy: ref("updated_by"),
     ...timestamps,
   },
-  (t) => [index("grain_period_site_seq").on(t.periodId, t.siteId, t.seq)],
+  (t) => [index("grain_period_site_seq").on(t.periodId, t.siteId, t.seq), index("grain_farmer").on(t.farmerId)],
 );
 
 /** 週報表紀錄，跟公糧紀錄一對一。姓名、公斤一律從公糧紀錄帶入，不另外存。 */

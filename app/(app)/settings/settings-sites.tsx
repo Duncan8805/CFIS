@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveSite, type SiteInput } from "@/app/actions/settings";
-import { Field, inputClass, SaveButton, Section, useSave } from "./ui";
+import { deleteSite, saveSite, type SiteInput } from "@/app/actions/settings";
+import { buttonClass, PageHeader } from "@/components/page-header";
+import { inputClass } from "./ui";
 
-export type SiteRow = Required<Omit<SiteInput, "id">> & { id: number };
+export type SiteRow = Required<Omit<SiteInput, "id">> & { id: number; currentCount: number; totalCount: number };
+type Draft = Required<Omit<SiteInput, "id">> & { id?: number };
 
-const blank = (sortOrder: number): Omit<SiteRow, "id"> & { id?: number } => ({
+const blank = (sortOrder: number): Draft => ({
   name: "",
   weeklySheetName: "",
   sellTo: "",
@@ -18,155 +20,293 @@ const blank = (sortOrder: number): Omit<SiteRow, "id"> & { id?: number } => ({
   active: true,
 });
 
-export function SettingsSites({ sites }: { sites: SiteRow[] }) {
-  const [adding, setAdding] = useState(false);
+function toDraft(site: SiteRow): Draft {
+  const { currentCount, totalCount, ...draft } = site;
+  void currentCount;
+  void totalCount;
+  return draft;
+}
+
+// 收購點管理：左邊清單、右邊編輯。停用的不會出現在輸入畫面（資料保留）；完全沒有資料的才能刪除。
+export function SitesManager({
+  sites,
+  startNew,
+  startEditId,
+}: {
+  sites: SiteRow[];
+  startNew: boolean;
+  startEditId: number | null;
+}) {
+  const [showInactive, setShowInactive] = useState(false);
+  const [editing, setEditing] = useState<number | "new" | null>(startNew ? "new" : startEditId);
+  const inactive = sites.filter((s) => !s.active).length;
+  const shown = sites.filter((s) => showInactive || s.active || s.id === editing);
   const nextOrder = Math.max(0, ...sites.map((s) => s.sortOrder)) + 10;
+  const site = typeof editing === "number" ? sites.find((s) => s.id === editing) : undefined;
+
   return (
-    <Section
-      id="sites"
-      title="收購點"
-      description="每個收購點對應公糧 Excel 的一張工作表。這裡的設定決定週報表的工作表名稱、繳售業者、備註要填誰的電話，以及利、運費要不要無條件捨去。"
-    >
-      <div className="flex flex-col gap-3">
-        {adding && <SiteForm initial={blank(nextOrder)} onDone={() => setAdding(false)} />}
-        {sites.map((s) => (
-          <SiteForm key={s.id} initial={s} />
-        ))}
+    <>
+      <PageHeader
+        title="收購點"
+        description="每個收購點對應公糧 Excel 的一張工作表。停用的收購點不會出現在輸入畫面，資料保留。"
+        actions={
+          <>
+            {inactive > 0 && (
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                  className="size-4 accent-brand-600"
+                />
+                顯示已停用（{inactive}）
+              </label>
+            )}
+            <button type="button" onClick={() => setEditing("new")} className={buttonClass.primary}>
+              ＋ 新增收購點
+            </button>
+          </>
+        }
+      />
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
+        <section aria-label="收購點清單" className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line bg-white">
+          <div className="overflow-x-auto">
+            <table className="tabular w-full min-w-[720px] whitespace-nowrap text-[15px]">
+              <thead>
+                <tr className="border-b border-line bg-panel text-left text-sm text-ink-2">
+                  <th className="px-3 py-2.5 font-bold">收購點</th>
+                  <th className="px-3 py-2.5 font-bold">週報表名稱</th>
+                  <th className="px-3 py-2.5 font-bold">繳售業者</th>
+                  <th className="px-3 py-2.5 font-bold">備註填</th>
+                  <th className="px-3 py-2.5 font-bold">利、運費</th>
+                  <th className="px-3 py-2.5 text-right font-bold">本期筆數</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((s) => {
+                  const selected = s.id === editing;
+                  const missing = s.remarkMode === "agent_contact" && !s.agentContact;
+                  return (
+                    <tr
+                      key={s.id}
+                      onClick={() => setEditing(s.id)}
+                      className={`cursor-pointer border-t border-line-soft ${
+                        selected ? "bg-brand-50 shadow-[inset_3px_0_0_#2F6F4F]" : "hover:bg-paper"
+                      } ${s.active ? "" : "text-ghost"}`}
+                    >
+                      <td className="px-3 py-2.5 font-bold">
+                        <button type="button" className="text-left" onClick={() => setEditing(s.id)}>
+                          {s.name}
+                        </button>
+                        {!s.active && <span className="ml-2 text-xs font-normal">停用</span>}
+                      </td>
+                      <td className="px-3 py-2.5">{s.weeklySheetName}</td>
+                      <td className="px-3 py-2.5">{s.sellTo}</td>
+                      <td className={`px-3 py-2.5 ${missing ? "text-warn-800" : ""}`}>
+                        {s.remarkMode === "agent_contact" ? `代收人${s.agentContact ? "" : "（未填）"}` : "農民電話"}
+                      </td>
+                      <td className="px-3 py-2.5">{s.roundingMode === "truncate" ? "捨去" : "不捨去"}</td>
+                      <td className="px-3 py-2.5 text-right">{s.currentCount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        {editing !== null && (
+          <SiteEditor
+            key={`${editing}-${site?.active}`}
+            initial={site ? toDraft(site) : blank(nextOrder)}
+            counts={site ? { current: site.currentCount, total: site.totalCount } : null}
+            onClose={() => setEditing(null)}
+            onCreated={(id) => setEditing(id)}
+          />
+        )}
       </div>
-      {!adding && (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="mt-3 rounded-lg border border-dashed border-brand-500 px-4 py-2 text-sm font-bold text-brand-700"
-        >
-          ＋ 新增收購點
-        </button>
-      )}
-    </Section>
+    </>
   );
 }
 
-function SiteForm({ initial, onDone }: { initial: Omit<SiteRow, "id"> & { id?: number }; onDone?: () => void }) {
+function SiteEditor({
+  initial,
+  counts,
+  onClose,
+  onCreated,
+}: {
+  initial: Draft;
+  counts: { current: number; total: number } | null;
+  onClose: () => void;
+  onCreated: (id: number) => void;
+}) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
-  // 平常只顯示一行摘要，按「編輯」才展開；新增的直接展開
-  const [open, setOpen] = useState(!initial.id);
-  const { status, run } = useSave();
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
-  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  const save = () =>
+  const run = async (fn: () => Promise<string | null>) => {
+    setBusy(true);
+    setError(null);
+    const err = await fn();
+    setBusy(false);
+    if (err) setError(err);
+  };
+
+  const save = (values: Draft) =>
     run(async () => {
-      const r = await saveSite({ ...form, agentContact: form.agentContact || null });
+      const r = await saveSite({ ...values, agentContact: values.agentContact || null });
       if (!r.ok) return r.error;
       router.refresh();
-      onDone?.();
+      if (!initial.id) onCreated(r.data.id);
       return null;
     });
 
-  if (!open) {
-    return (
-      <div
-        className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-black/10 px-3 py-2.5 text-sm ${
-          form.active ? "" : "bg-black/[0.03] text-black/45"
-        }`}
-      >
-        <span className="min-w-20 font-bold text-black">{form.name}</span>
-        <span className="text-black/60">週報表：{form.weeklySheetName}</span>
-        <span className="text-black/60">繳售：{form.sellTo}</span>
-        <span className="text-black/60">備註：{form.remarkMode === "agent_contact" ? `代收人 ${form.agentContact ?? "（未填）"}` : "農民電話"}</span>
-        <span className="text-black/60">{form.roundingMode === "truncate" ? "捨去" : "不捨去"}</span>
-        {!form.active && <span>（停用）</span>}
-        {status.kind === "saved" && <span className="text-brand-700">已儲存</span>}
-        <button type="button" onClick={() => setOpen(true)} className="ml-auto rounded-md px-2 py-1 text-brand-700 hover:bg-brand-50">
-          編輯
-        </button>
-      </div>
-    );
-  }
+  const remove = () =>
+    run(async () => {
+      if (!initial.id || !confirm(`刪除收購點「${initial.name}」？`)) return null;
+      const r = await deleteSite(initial.id);
+      if (!r.ok) return r.error;
+      router.refresh();
+      onClose();
+      return null;
+    });
+
+  const label = "flex flex-col gap-1.5 text-[13px] text-muted";
+  const radio = "flex items-center gap-2 text-[15px] text-ink";
 
   return (
-    <div className={`rounded-lg border p-3 ${form.active ? "border-black/10" : "border-black/10 bg-black/[0.03]"}`}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="收購點名稱（公糧 Excel 工作表）">
-          <input className={inputClass} value={form.name} onChange={(e) => set("name", e.target.value)} />
-        </Field>
-        <Field label="週報表工作表名稱">
-          <input className={inputClass} value={form.weeklySheetName} onChange={(e) => set("weeklySheetName", e.target.value)} />
-        </Field>
-        <Field label="預計繳售公糧業者名稱">
-          <input className={inputClass} value={form.sellTo} onChange={(e) => set("sellTo", e.target.value)} />
-        </Field>
-        <Field label="利、運費">
-          <select
-            className={inputClass}
-            value={form.roundingMode}
-            onChange={(e) => set("roundingMode", e.target.value as SiteRow["roundingMode"])}
-          >
-            <option value="truncate">無條件捨去（ROUNDDOWN）</option>
-            <option value="none">不捨去</option>
-          </select>
-        </Field>
-        <Field label="週報表備註">
-          <select
-            className={inputClass}
-            value={form.remarkMode}
-            onChange={(e) => set("remarkMode", e.target.value as SiteRow["remarkMode"])}
-          >
-            <option value="farmer_phone">填農民電話</option>
-            <option value="agent_contact">填代收人電話</option>
-          </select>
-        </Field>
-        <Field label="代收人電話" wide>
+    <aside aria-label="編輯收購點" className="flex w-full shrink-0 flex-col gap-4 rounded-xl border border-line bg-white p-5 xl:w-[380px]">
+      <div className="flex items-center gap-2">
+        <h2 className="flex-1 text-lg font-bold">{initial.id ? `編輯：${initial.name}` : "新增收購點"}</h2>
+        <button type="button" onClick={onClose} aria-label="關閉" className="size-9 rounded-lg text-xl text-muted hover:bg-paper">
+          ×
+        </button>
+      </div>
+      <label className={label}>
+        收購點名稱（公糧 Excel 工作表名稱）
+        <input className={inputClass} value={form.name} onChange={(e) => set("name", e.target.value)} />
+      </label>
+      <label className={label}>
+        週報表工作表名稱
+        <input
+          className={inputClass}
+          value={form.weeklySheetName}
+          placeholder={form.name ? `空白就用「${form.name}」` : undefined}
+          onChange={(e) => set("weeklySheetName", e.target.value)}
+        />
+      </label>
+      <label className={label}>
+        預計繳售公糧業者
+        <input className={inputClass} value={form.sellTo} onChange={(e) => set("sellTo", e.target.value)} />
+      </label>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1.5 text-[13px] text-muted">週報表備註要填</legend>
+        <label className={radio}>
+          <input
+            type="radio"
+            checked={form.remarkMode === "farmer_phone"}
+            onChange={() => set("remarkMode", "farmer_phone")}
+            className="accent-brand-600"
+          />
+          每位農民自己的電話
+        </label>
+        <label className={radio}>
+          <input
+            type="radio"
+            checked={form.remarkMode === "agent_contact"}
+            onChange={() => set("remarkMode", "agent_contact")}
+            className="accent-brand-600"
+          />
+          代收人的電話
+        </label>
+      </fieldset>
+      {form.remarkMode === "agent_contact" && (
+        <label className={`${label} ${form.agentContact ? "" : "!text-warn-800"}`}>
+          代收人電話{form.agentContact ? "" : "（還沒填）"}
           <input
             className={inputClass}
             value={form.agentContact ?? ""}
-            disabled={form.remarkMode !== "agent_contact"}
-            placeholder={form.remarkMode === "agent_contact" ? "例：珍0910163244/3703527" : "備註填農民電話時不需要"}
+            placeholder="例：珍0910163244/3703527"
             onChange={(e) => set("agentContact", e.target.value)}
           />
-        </Field>
-        <Field label="排序（小的在前）">
-          <input
-            className={inputClass}
-            inputMode="numeric"
-            value={form.sortOrder}
-            onChange={(e) => set("sortOrder", Number(e.target.value.replace(/\D/g, "")) || 0)}
-          />
-        </Field>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.active}
-            onChange={(e) => set("active", e.target.checked)}
-            className="size-4 accent-brand-600"
-          />
-          使用中（取消後不會出現在分頁，資料保留）
         </label>
-        <div className="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (onDone) return onDone();
-              setForm(initial);
-              setOpen(false);
-            }}
-            className="text-sm text-black/55"
-          >
-            {onDone ? "取消" : "收起"}
-          </button>
-          <SaveButton
-            status={status}
-            dirty={dirty || !initial.id}
-            onClick={async () => {
-              if ((await save()) && initial.id) setOpen(false);
-            }}
-            label={initial.id ? "儲存" : "新增"}
+      )}
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1.5 text-[13px] text-muted">利、運費</legend>
+        <label className={radio}>
+          <input
+            type="radio"
+            checked={form.roundingMode === "truncate"}
+            onChange={() => set("roundingMode", "truncate")}
+            className="accent-brand-600"
           />
-        </div>
+          無條件捨去（ROUNDDOWN）
+        </label>
+        <label className={radio}>
+          <input
+            type="radio"
+            checked={form.roundingMode === "none"}
+            onChange={() => set("roundingMode", "none")}
+            className="accent-brand-600"
+          />
+          不捨去，保留小數
+        </label>
+      </fieldset>
+      <label className={label}>
+        排序（小的在前）
+        <input
+          className={`${inputClass} tabular !w-32`}
+          inputMode="numeric"
+          value={form.sortOrder}
+          onChange={(e) => set("sortOrder", Number(e.target.value.replace(/\D/g, "")) || 0)}
+        />
+      </label>
+
+      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      <div className="flex gap-2.5">
+        <button
+          type="button"
+          disabled={busy || (!!initial.id && !dirty)}
+          onClick={() => save({ ...form, weeklySheetName: form.weeklySheetName.trim() || form.name })}
+          className="h-11 flex-1 rounded-[10px] bg-brand-600 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+        >
+          {busy ? "儲存中…" : initial.id ? "儲存" : "新增"}
+        </button>
+        <button type="button" onClick={onClose} className="h-11 rounded-[10px] border border-field px-4">
+          取消
+        </button>
       </div>
-    </div>
+
+      {initial.id && counts && (
+        <div className="flex flex-col gap-2 border-t border-line-soft pt-4">
+          <div className="text-sm font-bold">停用或刪除</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => save({ ...initial, active: !initial.active })}
+              className="h-10 rounded-[10px] border border-field px-4 text-sm hover:border-brand-500"
+            >
+              {initial.active ? "停用這個收購點" : "重新啟用"}
+            </button>
+            <button
+              type="button"
+              disabled={busy || counts.total > 0}
+              onClick={remove}
+              className="h-10 rounded-[10px] border border-red-200 px-4 text-sm text-red-700 disabled:border-line disabled:text-ghost"
+            >
+              刪除
+            </button>
+          </div>
+          <p className="text-[13px] text-muted">
+            {counts.total > 0
+              ? `還有 ${counts.total} 筆公糧資料${counts.total !== counts.current ? `（本期 ${counts.current} 筆）` : ""}，不能刪除，只能停用。沒有任何資料的收購點才能刪除。`
+              : "這個收購點沒有任何公糧資料，可以刪除。"}
+          </p>
+        </div>
+      )}
+    </aside>
   );
 }

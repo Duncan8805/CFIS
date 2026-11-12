@@ -7,3 +7,10 @@ next-env.d.ts
 .cloudflare/
 .dev.vars
 *.tsbuildinfo
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# graft code index (local tool)
+graft/
+.ignore

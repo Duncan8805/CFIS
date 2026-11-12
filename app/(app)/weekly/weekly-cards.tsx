@@ -18,22 +18,22 @@ export function WeeklyCards({ rows, save }: { rows: WRow[]; save: WeeklySaveFn }
             <button
               type="button"
               onClick={() => setEditingId(r.row.entryId)}
-              className="tabular flex w-full flex-col gap-1 rounded-xl border border-black/10 bg-white p-3 text-left active:bg-brand-50"
+              className="tabular flex w-full flex-col gap-1 rounded-xl border border-line bg-white p-3 text-left active:bg-brand-50"
             >
               <span className="flex items-baseline gap-2">
-                <span className="text-xs text-black/35">{i + 1}</span>
+                <span className="text-xs text-ghost">{i + 1}</span>
                 <span className="text-lg font-bold">{r.row.name || "（沒有姓名）"}</span>
                 {r.saving && <span className="size-2 animate-pulse rounded-full bg-brand-500" aria-label="儲存中" />}
-                {r.row.kg !== null && <span className="ml-auto text-sm text-black/50">{fmt(r.row.kg)} 公斤</span>}
+                {r.row.kg !== null && <span className="ml-auto text-sm text-muted">{fmt(r.row.kg)} 公斤</span>}
               </span>
               <span className="flex items-baseline gap-3 text-sm">
-                <span className={r.row.intakeDate ? "text-black/70" : "text-amber-700"}>
+                <span className={r.row.intakeDate ? "text-ink-2" : "text-warn-700"}>
                   {r.row.intakeDate ? formatDate(r.row.intakeDate) : "未填日期"}
                 </span>
-                <span className={r.row.moisture !== null ? "text-black/70" : "text-amber-700"}>
+                <span className={r.row.moisture !== null ? "text-ink-2" : "text-warn-700"}>
                   水分 {r.row.moisture ?? "未填"}
                 </span>
-                <span className="ml-auto text-black/60">
+                <span className="ml-auto text-muted">
                   濕穀 <b className="text-black">{fmt(r.wetQuantity)}</b>
                 </span>
               </span>
@@ -93,23 +93,23 @@ function EditSheet({ r, save, onClose }: { r: WRow; save: WeeklySaveFn; onClose:
       >
         <div className="mb-1 flex items-center">
           <h2 className="text-lg font-bold">{r.row.name}</h2>
-          <button type="button" onClick={onClose} className="ml-auto rounded-lg px-3 py-1 text-black/55">
+          <button type="button" onClick={onClose} className="ml-auto rounded-lg px-3 py-1 text-muted">
             取消
           </button>
         </div>
-        <p className="tabular mb-3 text-sm text-black/55">
+        <p className="tabular mb-3 text-sm text-muted">
           {fmt(r.row.kg)} 公斤・濕穀 {fmt(r.wetQuantity)}（姓名與公斤在「公糧」修改）
         </p>
         <div className="grid grid-cols-2 gap-3">
           {FORM_FIELDS.map(({ field, mode, placeholder, wide }) => (
             <label key={field} className={`flex flex-col gap-1 text-sm ${wide ? "col-span-2" : ""}`}>
-              <span className="text-black/60">{WEEKLY_LABEL[field]}</span>
+              <span className="text-muted">{WEEKLY_LABEL[field]}</span>
               <input
                 value={draft[field]}
                 onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
                 inputMode={mode}
                 placeholder={placeholder}
-                className={`tabular rounded-lg border border-black/20 px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none ${
+                className={`tabular rounded-lg border border-field px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none ${
                   mode ? "text-right" : ""
                 }`}
               />

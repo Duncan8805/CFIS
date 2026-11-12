@@ -125,24 +125,23 @@ export function WeeklySheet({
   return (
     <>
       <div className="print:hidden">
-        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-black/60">
-          <span className="font-bold text-black">{site.weeklySheetName}</span>
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
           <span className="tabular">{rows.length} 筆</span>
           <span className="tabular">{fmt(totalKg)} 公斤</span>
           <span className="tabular">濕穀 {fmt(totalWet)}</span>
-          {emptyMoisture.length > 0 && <span className="text-amber-700">{emptyMoisture.length} 筆還沒有水分</span>}
+          {emptyMoisture.length > 0 && <span className="text-warn-700">{emptyMoisture.length} 筆還沒有水分</span>}
           <div className="ml-auto flex flex-wrap gap-2">
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setRandomOpen((v) => !v)}
                 disabled={!rows.length}
-                className="rounded-lg border border-black/15 bg-white px-3 py-2 text-black hover:border-brand-500 disabled:opacity-40"
+                className="rounded-lg border border-field bg-white px-3 py-2 text-black hover:border-brand-500 disabled:opacity-40"
               >
                 隨機產生水分
               </button>
               {randomOpen && (
-                <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-black/10 bg-white p-2 text-black shadow-lg">
+                <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-line bg-white p-2 text-black shadow-lg">
                   <button
                     type="button"
                     onClick={() => fillRandom(emptyMoisture)}
@@ -160,7 +159,7 @@ export function WeeklySheet({
                   >
                     全部重新產生（{rows.length} 筆）
                   </button>
-                  <p className="px-3 pb-1 pt-2 text-xs text-black/50">
+                  <p className="px-3 pb-1 pt-2 text-xs text-muted">
                     24–30，以 26、27 最多；2 筆以上保證至少一個 30（跟原本的巨集一樣）
                   </p>
                 </div>
@@ -171,7 +170,7 @@ export function WeeklySheet({
               onClick={() => setPrintMode((v) => !v)}
               aria-pressed={printMode}
               className={`hidden rounded-lg border px-3 py-2 md:block ${
-                printMode ? "border-brand-600 bg-brand-50 font-bold text-brand-700" : "border-black/15 bg-white text-black"
+                printMode ? "border-brand-600 bg-brand-50 font-bold text-brand-700" : "border-field bg-white text-black"
               }`}
             >
               {printMode ? "目前：列印模式" : "目前：編輯模式"}
@@ -188,7 +187,7 @@ export function WeeklySheet({
         </div>
 
         {rows.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-black/20 bg-white p-6 text-center text-sm text-black/55">
+          <p className="rounded-xl border border-dashed border-field bg-white p-6 text-center text-sm text-muted">
             這個收購點還沒有資料。到「公糧」新增，或從「設定 → 匯入 Excel」匯入，週報表就會出現。
           </p>
         ) : (

@@ -3,13 +3,13 @@
 import { useState, type ReactNode } from "react";
 
 export const inputClass =
-  "w-full rounded-lg border border-black/20 bg-white px-3 py-2 text-[15px] focus:border-brand-500 focus:outline-none disabled:bg-black/5";
+  "w-full rounded-lg border border-field bg-white px-3 py-2 text-[15px] focus:border-brand-500 focus:outline-none disabled:bg-paper";
 
 export function Section({ id, title, description, children }: { id: string; title: string; description?: string; children: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-20 rounded-xl border border-black/10 bg-white p-4 md:p-5">
+    <section id={id} className="scroll-mt-20 rounded-xl border border-line bg-white p-4 md:p-5">
       <h2 className="text-lg font-bold">{title}</h2>
-      {description && <p className="mt-1 text-sm text-black/55">{description}</p>}
+      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -18,7 +18,7 @@ export function Section({ id, title, description, children }: { id: string; titl
 export function Field({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
     <label className={`flex min-w-0 flex-col gap-1 text-sm ${wide ? "sm:col-span-2" : ""}`}>
-      <span className="text-black/60">{label}</span>
+      <span className="text-muted">{label}</span>
       {children}
     </label>
   );

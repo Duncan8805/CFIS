@@ -9,6 +9,7 @@ import type { SiteConfig } from "@/lib/import/plan";
 import type { GrainRates } from "@/lib/calc";
 import { logError } from "@/lib/log";
 import { getCalcSettings } from "@/lib/data/settings";
+import { linkRecordsToFarmers } from "@/lib/data/farmers";
 
 export interface ImportContext {
   periodLabel: string;
@@ -41,7 +42,7 @@ export async function getImportContext(): Promise<ImportContext> {
     .from(schema.grainRecords)
     .where(eq(schema.grainRecords.periodId, period.id))
     .groupBy(schema.grainRecords.siteId);
-  const { rates } = await getCalcSettings();
+  const { rates } = await getCalcSettings(period);
   return {
     periodLabel: periodLabel(period),
     rates,
@@ -137,6 +138,7 @@ export async function importSite(input: SiteImportInput): Promise<SiteImportResu
         .from(schema.grainRecords)
         .where(scope);
       const idBySeq = new Map(inserted.map((r) => [r.seq, r.id]));
+      await linkRecordsToFarmers(tx, inserted.map((r) => r.id));
       const weeklyValues = records
         .filter((r) => r.weekly)
         .map((r) => ({ grainRecordId: idBySeq.get(r.seq)!, ...r.weekly!, updatedBy: user.id }));

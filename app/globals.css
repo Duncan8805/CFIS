@@ -1,12 +1,31 @@
 @import "tailwindcss";
 
+/* 顏色照設計稿：米白底、白卡片、深綠主色；橘色只用在「要注意」的地方 */
 @theme {
-  --color-brand-50: #eef6f1;
-  --color-brand-100: #d5e9dd;
+  --color-brand-50: #f3f8f4;
+  --color-brand-100: #e7f0ea;
+  --color-brand-200: #c9dccf;
   --color-brand-500: #3d8a63;
   --color-brand-600: #2f6f4f;
-  --color-brand-700: #255a40;
-  --color-paper: #f6f5f1;
+  --color-brand-700: #1f4f37;
+  --color-paper: #f5f3ee;
+  --color-panel: #faf9f5;
+  --color-calc: #faf8f3;
+  --color-head: #f1efe8;
+  --color-line: #e4e0d6;
+  --color-line-soft: #f0ece3;
+  --color-field: #d6d1c4;
+  --color-ink: #1d1c1a;
+  --color-ink-2: #3d3a35;
+  --color-muted: #5e5a52;
+  --color-faint: #77726a;
+  --color-ghost: #a39e93;
+  --color-warn-50: #fff8ec;
+  --color-warn-100: #fff4e0;
+  --color-warn-line: #ebd9b4;
+  --color-warn-500: #c98a1b;
+  --color-warn-700: #9a5b00;
+  --color-warn-800: #7a4700;
   --font-sans: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -17,7 +36,7 @@
 body {
   margin: 0;
   background: var(--color-paper);
-  color: #1a1a1a;
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
 }

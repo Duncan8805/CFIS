@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
 
 const inputClass =
-  "w-full rounded-lg border border-black/20 px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none";
+  "w-full rounded-lg border border-field px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, { error: null });
@@ -13,7 +13,7 @@ export function LoginForm({ next }: { next: string }) {
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next} />
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-black/60">帳號</span>
+        <span className="text-muted">帳號</span>
         <input
           name="username"
           defaultValue={state.username}
@@ -24,7 +24,7 @@ export function LoginForm({ next }: { next: string }) {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-black/60">密碼</span>
+        <span className="text-muted">密碼</span>
         <input
           name="password"
           type="password"

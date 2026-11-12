@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { asc, eq } from "drizzle-orm";
 import { PageHeader } from "@/components/page-header";
-import { SiteTabs } from "@/components/site-tabs";
+import { SitePicker } from "@/components/site-picker";
 import { calcGrain, effectiveRoundingMode } from "@/lib/calc";
+import { requireUser } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite, listGrainRecords } from "@/lib/data/grain";
 import { getCalcSettings } from "@/lib/data/settings";
+import { listSites, pickSite } from "@/lib/data/sites";
 import { ReceiptsClient } from "./receipts-client";
 import type { ReceiptData } from "./receipt-slip";
 
@@ -14,19 +16,13 @@ export const metadata: Metadata = { title: "收款單" };
 
 export default async function ReceiptsPage({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
   const db = getDb();
-  const period = await getCurrentPeriod();
-  const sites = await db
-    .select({ id: schema.sites.id, name: schema.sites.name, roundingMode: schema.sites.roundingMode })
-    .from(schema.sites)
-    .where(eq(schema.sites.active, true))
-    .orderBy(asc(schema.sites.sortOrder));
+  const [user, period, sites] = await Promise.all([requireUser(), getCurrentPeriod(), listSites()]);
   const counts = await countBySite(period.id);
-
-  const { site: siteParam } = await searchParams;
-  const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
+  const site = pickSite(sites, counts, (await searchParams).site);
+  if (!site) return <PageHeader title="收款單" description="還沒有任何收購點，請先到「設定 → 收購點」新增。" />;
   const [records, settings, accounts] = await Promise.all([
     listGrainRecords(period.id, site.id),
-    getCalcSettings(),
+    getCalcSettings(period),
     db
       .select({
         id: schema.bankAccounts.id,
@@ -64,17 +60,16 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
     });
 
   return (
-    <>
+    <SitePicker
+      basePath="/receipts"
+      sites={sites.map((s) => ({ id: s.id, label: s.name, count: counts.get(s.id) ?? 0 }))}
+      activeId={site.id}
+      canManage={user.role === "admin"}
+    >
       <div className="print:hidden">
-        <PageHeader title="收款單" description={`${periodLabel(period)}・A4 一頁 6 張`} />
+        <PageHeader eyebrow="收款單" title={site.name} description={`${periodLabel(period)}・A4 一頁 6 張，跟原本的收款單產生器同一個版面`} />
       </div>
-      <SiteTabs
-        basePath="/receipts"
-        sites={sites.map((s) => ({ id: s.id, label: s.name }))}
-        activeId={site.id}
-        counts={counts}
-      />
-      <ReceiptsClient key={site.id} siteName={site.name} receipts={receipts} accounts={accounts} />
-    </>
+      <ReceiptsClient key={`${period.id}-${site.id}`} siteName={site.name} receipts={receipts} accounts={accounts} />
+    </SitePicker>
   );
 }

@@ -1,52 +1,42 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
 import { PageHeader } from "@/components/page-header";
-import { SiteTabs } from "@/components/site-tabs";
-import { getDb, schema } from "@/lib/db";
-import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
-import { countBySite, farmerSuggestions, listGrainRecords } from "@/lib/data/grain";
+import { SitePicker } from "@/components/site-picker";
+import { requireUser } from "@/lib/auth/session";
+import { getCurrentPeriod } from "@/lib/data/period";
+import { countBySite, listGrainRecords } from "@/lib/data/grain";
+import { listFarmers } from "@/lib/data/farmers";
 import { getCalcSettings } from "@/lib/data/settings";
+import { listSites, pickSite } from "@/lib/data/sites";
 import { GrainSheet } from "./grain-sheet";
 
 export const metadata: Metadata = { title: "公糧" };
 
 export default async function GrainPage({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
-  const period = await getCurrentPeriod();
-  const sites = await getDb()
-    .select({ id: schema.sites.id, name: schema.sites.name, roundingMode: schema.sites.roundingMode })
-    .from(schema.sites)
-    .where(eq(schema.sites.active, true))
-    .orderBy(asc(schema.sites.sortOrder));
+  const [user, period, sites] = await Promise.all([requireUser(), getCurrentPeriod(), listSites()]);
   const counts = await countBySite(period.id);
+  const site = pickSite(sites, counts, (await searchParams).site);
+  if (!site) return <PageHeader title="公糧" description="還沒有任何收購點，請先到「設定 → 收購點」新增。" />;
 
-  // 沒指定收購點時，打開第一個有資料的
-  const { site: siteParam } = await searchParams;
-  const site = sites.find((s) => String(s.id) === siteParam) ?? sites.find((s) => counts.get(s.id)) ?? sites[0];
-  const [records, suggestions, settings] = await Promise.all([
+  const [records, farmers, settings] = await Promise.all([
     listGrainRecords(period.id, site.id),
-    farmerSuggestions(),
-    getCalcSettings(),
+    listFarmers(),
+    getCalcSettings(period),
   ]);
 
   return (
-    <>
-      <PageHeader
-        title="公糧"
-        description={`${periodLabel(period)}・輸入後自動帶入週報表`}
-        actions={
-          <Link href="/import" className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm hover:border-brand-500">
-            匯入 Excel
-          </Link>
-        }
+    <SitePicker
+      basePath="/grain"
+      sites={sites.map((s) => ({ id: s.id, label: s.name, count: counts.get(s.id) ?? 0 }))}
+      activeId={site.id}
+      canManage={user.role === "admin"}
+    >
+      <GrainSheet
+        key={`${period.id}-${site.id}`}
+        site={{ id: site.id, name: site.name, roundingMode: site.roundingMode }}
+        settings={settings}
+        initialRecords={records}
+        farmers={farmers}
       />
-      <SiteTabs
-        basePath="/grain"
-        sites={sites.map((s) => ({ id: s.id, label: s.name }))}
-        activeId={site.id}
-        counts={counts}
-      />
-      <GrainSheet key={site.id} site={site} rates={settings.rates} initialRecords={records} suggestions={suggestions} />
-    </>
+    </SitePicker>
   );
 }

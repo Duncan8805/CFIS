@@ -5,9 +5,10 @@ import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { getCalcSettings } from "@/lib/data/settings";
+import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
+import { listSites } from "@/lib/data/sites";
 import { SettingsAccounts } from "./settings-accounts";
 import { SettingsCalc } from "./settings-calc";
-import { SettingsSites } from "./settings-sites";
 import { SettingsUsers } from "./settings-users";
 
 export const metadata: Metadata = { title: "設定" };
@@ -25,7 +26,7 @@ export default async function SettingsPage() {
     return (
       <>
         <PageHeader title="設定" />
-        <p className="rounded-xl border border-black/10 bg-white p-5 text-sm text-black/60">
+        <p className="rounded-xl border border-line bg-white p-5 text-sm text-muted">
           只有管理員可以修改設定。需要調整收購點、計算參數或帳號時，請找管理員。
         </p>
       </>
@@ -33,22 +34,10 @@ export default async function SettingsPage() {
   }
 
   const db = getDb();
+  const period = await getCurrentPeriod();
   const [sites, settings, accounts, users] = await Promise.all([
-    db
-      .select({
-        id: schema.sites.id,
-        name: schema.sites.name,
-        weeklySheetName: schema.sites.weeklySheetName,
-        sellTo: schema.sites.sellTo,
-        remarkMode: schema.sites.remarkMode,
-        agentContact: schema.sites.agentContact,
-        roundingMode: schema.sites.roundingMode,
-        sortOrder: schema.sites.sortOrder,
-        active: schema.sites.active,
-      })
-      .from(schema.sites)
-      .orderBy(asc(schema.sites.sortOrder), asc(schema.sites.id)),
-    getCalcSettings(),
+    listSites({ includeInactive: true }),
+    getCalcSettings(period),
     db
       .select({
         id: schema.bankAccounts.id,
@@ -80,21 +69,33 @@ export default async function SettingsPage() {
         <ul className="flex w-max gap-1.5 text-sm">
           {SECTIONS.map((s) => (
             <li key={s.id}>
-              <a href={`#${s.id}`} className="block rounded-full border border-black/15 bg-white px-3 py-1.5 hover:border-brand-500">
+              <a href={`#${s.id}`} className="block rounded-full border border-field bg-white px-3 py-1.5 hover:border-brand-500">
                 {s.label}
               </a>
             </li>
           ))}
           <li>
-            <Link href="/import" className="block rounded-full border border-black/15 bg-white px-3 py-1.5 hover:border-brand-500">
+            <Link href="/import" className="block rounded-full border border-field bg-white px-3 py-1.5 hover:border-brand-500">
               匯入 Excel →
             </Link>
           </li>
         </ul>
       </nav>
       <div className="flex flex-col gap-5">
-        <SettingsSites sites={sites} />
-        <SettingsCalc settings={settings} />
+        <section id="sites" className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white p-4 md:p-5">
+          <div className="min-w-60 flex-1">
+            <h2 className="text-lg font-bold">收購點</h2>
+            <p className="mt-1 text-sm text-muted">
+              {sites.filter((s) => s.active).length} 個使用中
+              {sites.some((s) => !s.active) && `、${sites.filter((s) => !s.active).length} 個停用`}
+              。新增、修改週報表名稱、備註規則、捨入方式，或停用、刪除收購點。
+            </p>
+          </div>
+          <Link href="/settings/sites" className="rounded-[10px] border border-field px-4 py-2.5 font-bold text-brand-700 hover:border-brand-500">
+            管理收購點 →
+          </Link>
+        </section>
+        <SettingsCalc settings={settings} periodLabel={periodLabel(period)} />
         <SettingsAccounts accounts={accounts} />
         <SettingsUsers users={users} currentUserId={user.id} />
       </div>

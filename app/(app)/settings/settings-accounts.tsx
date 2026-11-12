@@ -53,7 +53,7 @@ function AccountForm({ initial, onDone }: { initial: Omit<AccountRow, "id"> & { 
     });
 
   return (
-    <div className={`rounded-lg border border-black/10 p-3 ${form.active ? "" : "bg-black/[0.03]"}`}>
+    <div className={`rounded-lg border border-line p-3 ${form.active ? "" : "bg-panel"}`}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="農會">
           <input className={inputClass} value={form.org} onChange={(e) => set("org", e.target.value)} placeholder="例：鹿草農會本會" />
@@ -84,7 +84,7 @@ function AccountForm({ initial, onDone }: { initial: Omit<AccountRow, "id"> & { 
         </label>
         <div className="ml-auto flex items-center gap-3">
           {onDone && (
-            <button type="button" onClick={onDone} className="text-sm text-black/55">
+            <button type="button" onClick={onDone} className="text-sm text-muted">
               取消
             </button>
           )}

@@ -5,11 +5,15 @@ import type { RoundingMode } from "@/lib/calc";
 export interface GrainRecordDto {
   id: number;
   seq: number;
+  farmerId: number | null;
+  fileNo: string | null;
   code: string | null;
   name: string;
   phone: string | null;
   address: string | null;
   kg: number | null;
+  planKg: number | null;
+  guideKg: number | null;
   fen: number | null;
   deposit: number | null;
   collectOverride: string | null;
@@ -17,31 +21,48 @@ export interface GrainRecordDto {
 }
 
 export interface GrainPatch {
+  fileNo?: string | null;
   code?: string | null;
   name?: string;
   phone?: string | null;
   address?: string | null;
-  kg?: number | null;
+  planKg?: number | null;
+  guideKg?: number | null;
   fen?: number | null;
   deposit?: number | null;
   collectOverride?: string | null;
 }
 
-/** 可以編輯的欄位，順序就是表格的欄位順序（利、運費、先付 夾在中間，是計算欄） */
-export type EditableField = "code" | "name" | "phone" | "kg" | "fen" | "deposit" | "collect" | "address";
+/** 可以編輯的欄位。公斤＝計畫＋輔導，不能直接打。 */
+export type EditableField =
+  | "fileNo"
+  | "code"
+  | "name"
+  | "phone"
+  | "fen"
+  | "plan"
+  | "guide"
+  | "deposit"
+  | "collect"
+  | "address";
 
 export const FIELD_LABEL: Record<EditableField, string> = {
+  fileNo: "檔號",
   code: "編號",
   name: "姓名",
   phone: "電話",
-  kg: "公斤",
   fen: "分",
+  plan: "計畫收購",
+  guide: "輔導收購",
   deposit: "入簿",
   collect: "收",
   address: "地址",
 };
 
 const MAX_LEN: Partial<Record<EditableField, number>> = { code: 20, name: 32, phone: 100, address: 200, collect: 20 };
+
+/** 檔號：1 個英文字母加 8 位數字，例如 Q11101404 */
+export const FILE_NO_PATTERN = /^[A-Z]\d{8}$/;
 
 export type ParseResult = { ok: true; patch: GrainPatch } | { ok: false; error: string };
 
@@ -59,6 +80,11 @@ export function parseField(field: EditableField, raw: string): ParseResult {
   if (max && text.length > max) return { ok: false, error: `${FIELD_LABEL[field]}最多 ${max} 個字` };
 
   switch (field) {
+    case "fileNo": {
+      const v = text.replace(/\s/g, "").toUpperCase();
+      if (v && !FILE_NO_PATTERN.test(v)) return { ok: false, error: "檔號是 1 個英文字母加 8 位數字，例如 Q11101404" };
+      return { ok: true, patch: { fileNo: v || null } };
+    }
     case "code":
     case "phone":
     case "address":
@@ -72,14 +98,16 @@ export function parseField(field: EditableField, raw: string): ParseResult {
       }
       return { ok: true, patch: { collectOverride: text || null } };
     }
-    case "kg":
+    case "plan":
+    case "guide":
     case "deposit": {
       const n = parseNumber(text);
       if (n === "invalid" || (n !== null && !Number.isInteger(n))) {
         return { ok: false, error: `${FIELD_LABEL[field]}要填整數` };
       }
-      if (field === "kg" && n !== null && n < 0) return { ok: false, error: "公斤不能是負數" };
-      return { ok: true, patch: { [field]: n } };
+      if (field !== "deposit" && n !== null && n < 0) return { ok: false, error: `${FIELD_LABEL[field]}不能是負數` };
+      const key = field === "plan" ? "planKg" : field === "guide" ? "guideKg" : "deposit";
+      return { ok: true, patch: { [key]: n } };
     }
     case "fen": {
       const n = parseNumber(text);
@@ -95,13 +123,46 @@ export function fieldText(record: GrainRecordDto, field: EditableField): string 
   switch (field) {
     case "collect":
       return record.collectOverride ?? "";
-    case "kg":
+    case "plan":
+    case "guide":
     case "fen":
     case "deposit": {
-      const v = record[field];
+      const v = field === "plan" ? record.planKg : field === "guide" ? record.guideKg : record[field];
       return v === null ? "" : String(v);
     }
     default:
       return record[field] ?? "";
   }
+}
+
+/**
+ * 公斤 = 計畫收購 + 輔導收購（餘糧收購不算）。
+ * 兩欄都空白時沿用原本的公斤：從舊 Excel 匯入的資料只有公斤。
+ */
+export function totalKg(planKg: number | null, guideKg: number | null, previousKg: number | null): number | null {
+  if (planKg === null && guideKg === null) return previousKg;
+  return (planKg ?? 0) + (guideKg ?? 0);
+}
+
+/** 打了核定面積（分，公頃）時，依這一期每公頃的收購量算出建議的計畫、輔導數量（四捨五入到公斤） */
+export function suggestPlanGuide(
+  fen: number,
+  planKgPerHa: number | null,
+  guideKgPerHa: number | null,
+): { planKg?: number; guideKg?: number } {
+  const scaled = Math.round(fen * 10000);
+  const kg = (perHa: number) => Math.round((scaled * perHa) / 10000);
+  return {
+    ...(planKgPerHa ? { planKg: kg(planKgPerHa) } : {}),
+    ...(guideKgPerHa ? { guideKg: kg(guideKgPerHa) } : {}),
+  };
+}
+
+/** 電話欄常把好幾支寫在一起（用「/」或換行分開），顯示時一支一行 */
+export function splitPhones(phone: string | null): string[] {
+  if (!phone) return [];
+  return phone
+    .split(/[\/\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }

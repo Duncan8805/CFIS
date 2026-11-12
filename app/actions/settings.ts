@@ -64,7 +64,7 @@ export async function saveSite(input: SiteInput): Promise<ActionResult<{ id: num
     const [{ id: newId }] = await db.insert(schema.sites).values(values).$returningId();
     await audit(user, "site", newId, "create", values);
     revalidatePath("/", "layout");
-    return { ok: true, data: { id: newId } };
+    return { ok: true, data: { id: Number(newId) } };
   } catch (err) {
     if (isDuplicate(err)) return { ok: false, error: `已經有叫「${values.name}」的收購點` };
     logError("saveSite", err);
@@ -72,64 +72,49 @@ export async function saveSite(input: SiteInput): Promise<ActionResult<{ id: num
   }
 }
 
-// ---------- 計算參數 ----------
-
-const CalcSchema = z.object({
-  interestPerFen: z.number().positive("每分利要大於 0").max(1_000_000),
-  freightPerKg: z.number().min(0, "運費不能是負數").max(1000),
-  vendorName: z.string().trim().min(1, "請填繳交業者").max(32),
-});
-
-export async function saveCalcSettings(input: z.infer<typeof CalcSchema>): Promise<Ok> {
+/** 刪除收購點：只有完全沒有公糧資料（所有期別）的才能刪，有資料的只能停用 */
+export async function deleteSite(id: number): Promise<Ok> {
   const user = await requireAdmin();
-  const parsed = CalcSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
-  const d = parsed.data;
+  if (!Number.isInteger(id)) return { ok: false, error: "資料格式不正確" };
+  const db = getDb();
   try {
-    await getDb().transaction(async (tx) => {
-      for (const [key, value] of [
-        [SETTING_KEYS.interestPerFen, d.interestPerFen],
-        [SETTING_KEYS.freightPerKg, d.freightPerKg],
-        [SETTING_KEYS.vendorName, d.vendorName],
-      ] as const) {
-        await tx.insert(schema.settings).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
-      }
-      await tx.insert(schema.auditLogs).values({ userId: user.id, entity: "settings", entityId: 0, action: "update", changes: d });
+    const [{ n }] = await db.select({ n: count() }).from(schema.grainRecords).where(eq(schema.grainRecords.siteId, id));
+    if (n > 0) return { ok: false, error: `還有 ${n} 筆公糧資料，不能刪除，只能停用` };
+    const [before] = await db.select().from(schema.sites).where(eq(schema.sites.id, id)).limit(1);
+    if (!before) return ok;
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.sites).where(eq(schema.sites.id, id));
+      await tx.insert(schema.auditLogs).values({ userId: user.id, entity: "site", entityId: id, action: "delete", changes: before });
     });
     revalidatePath("/", "layout");
     return ok;
   } catch (err) {
-    logError("saveCalcSettings", err);
-    return { ok: false, error: "儲存失敗，請再試一次" };
+    logError("deleteSite", err);
+    return { ok: false, error: "刪除失敗，請再試一次" };
   }
 }
 
-const MoistureSchema = z
-  .array(
-    z.object({
-      moisture: z.number().int().min(0).max(100),
-      rate: z.number().gt(0, "折算率要大於 0").max(1, "折算率不能大於 1"),
-    }),
-  )
-  .min(1, "至少要有一列")
-  .max(100)
-  .refine((rows) => new Set(rows.map((r) => r.moisture)).size === rows.length, "水分有重複");
+// ---------- 週報表繳交業者（所有期別共用；每期的計算參數在 actions/periods） ----------
 
-/** 整張水分折算率表一起取代 */
-export async function saveMoistureRates(rows: { moisture: number; rate: number }[]): Promise<Ok> {
+const VendorSchema = z.string().trim().min(1, "請填繳交業者").max(32);
+
+export async function saveVendorName(input: string): Promise<Ok> {
   const user = await requireAdmin();
-  const parsed = MoistureSchema.safeParse(rows);
+  const parsed = VendorSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const value = parsed.data;
   try {
     await getDb().transaction(async (tx) => {
-      await tx.delete(schema.moistureRates);
-      await tx.insert(schema.moistureRates).values(parsed.data);
-      await tx.insert(schema.auditLogs).values({ userId: user.id, entity: "moisture_rates", entityId: 0, action: "update", changes: parsed.data });
+      await tx
+        .insert(schema.settings)
+        .values({ key: SETTING_KEYS.vendorName, value })
+        .onDuplicateKeyUpdate({ set: { value } });
+      await tx.insert(schema.auditLogs).values({ userId: user.id, entity: "settings", entityId: 0, action: "update", changes: { vendorName: value } });
     });
     revalidatePath("/", "layout");
     return ok;
   } catch (err) {
-    logError("saveMoistureRates", err);
+    logError("saveVendorName", err);
     return { ok: false, error: "儲存失敗，請再試一次" };
   }
 }
@@ -163,7 +148,7 @@ export async function saveBankAccount(input: AccountInput): Promise<ActionResult
     const [{ id: newId }] = await db.insert(schema.bankAccounts).values(values).$returningId();
     await audit(user, "bank_account", newId, "create", values);
     revalidatePath("/", "layout");
-    return { ok: true, data: { id: newId } };
+    return { ok: true, data: { id: Number(newId) } };
   } catch (err) {
     logError("saveBankAccount", err);
     return { ok: false, error: "儲存失敗，請再試一次" };

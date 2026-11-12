@@ -44,7 +44,7 @@ function UserForm({ initial, isSelf }: { initial: UserRow; isSelf: boolean }) {
     });
 
   return (
-    <div className={`rounded-lg border border-black/10 p-3 ${form.active ? "" : "bg-black/[0.03]"}`}>
+    <div className={`rounded-lg border border-line p-3 ${form.active ? "" : "bg-panel"}`}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="帳號">
           <input className={inputClass} value={form.username} disabled />
@@ -75,7 +75,7 @@ function UserForm({ initial, isSelf }: { initial: UserRow; isSelf: boolean }) {
           />
           可以登入
         </label>
-        {isSelf && <span className="text-sm text-black/45">（這是你自己的帳號）</span>}
+        {isSelf && <span className="text-sm text-faint">（這是你自己的帳號）</span>}
         <button type="button" onClick={() => setResetting((v) => !v)} className="text-sm text-brand-700">
           {resetting ? "取消重設密碼" : "重設密碼"}
         </button>
@@ -165,7 +165,7 @@ function NewUserForm() {
         </Field>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <button type="button" onClick={() => setOpen(false)} className="text-sm text-black/55">
+        <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted">
           取消
         </button>
         <SaveButton status={status} dirty={!!form.username && !!form.password} onClick={save} label="新增" />

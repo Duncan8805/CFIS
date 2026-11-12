@@ -6,21 +6,25 @@ import { getDb, schema } from "@/lib/db";
 import { requireUser } from "@/lib/auth/session";
 import { getCurrentPeriod } from "@/lib/data/period";
 import { grainColumns } from "@/lib/data/grain";
+import { resolveFarmer } from "@/lib/data/farmers";
 import { logError } from "@/lib/log";
-import type { GrainPatch, GrainRecordDto } from "@/lib/grain/fields";
+import { FILE_NO_PATTERN, totalKg, type GrainPatch, type GrainRecordDto } from "@/lib/grain/fields";
 
 const g = schema.grainRecords;
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 const text = (max: number) => z.string().trim().max(max).nullable();
+const kgSchema = z.number().int().min(0).max(10_000_000).nullable();
 const PatchSchema = z
   .object({
+    fileNo: z.string().regex(FILE_NO_PATTERN).nullable(),
     code: text(20),
     name: z.string().trim().max(32),
     phone: text(100),
     address: text(200),
-    kg: z.number().int().min(0).max(10_000_000).nullable(),
+    planKg: kgSchema,
+    guideKg: kgSchema,
     fen: z.number().min(0).max(9999).nullable(),
     deposit: z.number().int().min(-100_000_000).max(100_000_000).nullable(),
     collectOverride: text(20),
@@ -32,6 +36,31 @@ async function fetchRecord(id: number): Promise<GrainRecordDto | null> {
   const [row] = await getDb().select(grainColumns).from(g).where(eq(g.id, id)).limit(1);
   return row ?? null;
 }
+
+type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+
+/**
+ * 存檔前補上衍生的欄位：
+ * - 公斤 = 計畫 + 輔導（兩欄都空白時保留原本的公斤）
+ * - 檔號、姓名改了 → 重新對應農民名冊（名冊沒有的檔號自動加進去）
+ */
+async function withDerived(tx: Tx, before: GrainRecordDto | null, patch: GrainPatch) {
+  const merged = { ...(before ?? emptyRecord), ...patch };
+  const values: GrainPatch & { kg?: number | null; farmerId?: number | null } = { ...patch };
+  if ("planKg" in patch || "guideKg" in patch) values.kg = totalKg(merged.planKg, merged.guideKg, before?.kg ?? null);
+  // 電話、地址也要：名冊上還空著的欄位用這一筆補上（不會蓋掉名冊已經有的）
+  if ("fileNo" in patch || "name" in patch || "phone" in patch || "address" in patch || !before) {
+    // 檔號換了，原本連到的農民就不一定對；讓 resolveFarmer 依新檔號重新找
+    const farmerId = "fileNo" in patch && before?.fileNo && before.fileNo !== patch.fileNo ? null : merged.farmerId;
+    values.farmerId = await resolveFarmer(tx, { ...merged, farmerId });
+  }
+  return values;
+}
+
+const emptyRecord: GrainRecordDto = {
+  id: 0, seq: 0, farmerId: null, fileNo: null, code: null, name: "", phone: null, address: null,
+  kg: null, planKg: null, guideKg: null, fen: null, deposit: null, collectOverride: null, roundingMode: null,
+};
 
 /** 新增一筆（排在最後），週報表同時建立對應的一筆 */
 export async function createGrainRecord(siteId: number, initial: GrainPatch = {}): Promise<ActionResult<GrainRecordDto>> {
@@ -54,7 +83,7 @@ export async function createGrainRecord(siteId: number, initial: GrainPatch = {}
           siteId,
           seq: Number(maxSeq) + 1,
           name: "",
-          ...patch.data,
+          ...(await withDerived(tx, null, patch.data)),
           updatedBy: user.id,
         })
         .$returningId();
@@ -98,7 +127,8 @@ export async function updateGrainRecord(id: number, input: GrainPatch): Promise<
     if (!Object.keys(changes).length) return { ok: true, data: before };
 
     await db.transaction(async (tx) => {
-      await tx.update(g).set({ ...patch.data, updatedBy: user.id }).where(eq(g.id, id));
+      const values = await withDerived(tx, before, patch.data);
+      await tx.update(g).set({ ...values, updatedBy: user.id }).where(eq(g.id, id));
       await tx.insert(schema.auditLogs).values({ userId: user.id, entity: "grain_record", entityId: id, action: "update", changes });
     });
     const after = await fetchRecord(id);

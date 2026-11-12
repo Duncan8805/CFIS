@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 // 像 Excel 的可編輯格子（公糧表、週報表共用）。
 // 方向鍵移動、Enter 往下、Shift+Enter 往上、Esc 取消；離開格子才存檔，而且只有真的打過字才算修改。
@@ -24,6 +24,8 @@ export function GridCell({
   list,
   label,
   highlight,
+  display,
+  onPastEnd,
   onCommit,
 }: {
   gridId: string;
@@ -36,6 +38,13 @@ export function GridCell({
   label: string;
   /** 例如 收 欄被手動改成「扣」 */
   highlight?: boolean;
+  /**
+   * 沒在編輯時改顯示這個內容（例如電話一支一行、姓名不換行），由它決定格子的寬高；
+   * 點進去才看到原本的輸入框。
+   */
+  display?: ReactNode;
+  /** 在最後一列按 Enter／往下時呼叫（例如新增一筆） */
+  onPastEnd?: () => void;
   onCommit: (raw: string) => Promise<string | null>;
 }) {
   const [draft, setDraft] = useState(value);
@@ -58,7 +67,7 @@ export function GridCell({
 
   const move = (dr: number, dc: number) => {
     commit();
-    focusCell(gridId, row + dr, col + dc);
+    if (!focusCell(gridId, row + dr, col + dc) && dr > 0 && onPastEnd) onPastEnd();
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -86,7 +95,7 @@ export function GridCell({
     }
   };
 
-  return (
+  const input = (
     <input
       data-r={row}
       data-c={col}
@@ -101,9 +110,21 @@ export function GridCell({
       }}
       onBlur={commit}
       onKeyDown={onKeyDown}
-      className={`w-full bg-transparent px-2 py-1.5 outline-none placeholder:text-inherit focus:bg-white focus:ring-2 focus:ring-inset focus:ring-brand-500 ${
+      className={`w-full bg-transparent px-3 py-2 outline-none placeholder:text-ghost focus:bg-white focus:ring-2 focus:ring-inset focus:ring-brand-600 ${
         numeric ? "text-right" : ""
-      } ${highlight ? "font-bold text-amber-700" : ""}`}
+      } ${highlight ? "font-bold text-warn-700" : ""} ${
+        display !== undefined ? "absolute inset-0 h-full text-transparent placeholder:text-transparent focus:text-ink focus:placeholder:text-ghost" : ""
+      }`}
     />
+  );
+  if (display === undefined) return input;
+  return (
+    <div className="relative">
+      {/* 正在打字時顯示草稿，避免切換前後內容不同 */}
+      <div aria-hidden="true" className="whitespace-nowrap px-3 py-2">
+        {dirty.current ? draft || " " : display}
+      </div>
+      {input}
+    </div>
   );
 }
