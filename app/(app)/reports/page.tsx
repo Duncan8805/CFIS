@@ -3,6 +3,9 @@ import { PageHeader } from "@/components/page-header";
 import { getCurrentPeriod, listPeriods, periodLabel, periodShort } from "@/lib/data/period";
 import { listSites } from "@/lib/data/sites";
 import { periodSummary, type PeriodSummary } from "@/lib/data/summary";
+import { getCalcSettings } from "@/lib/data/settings";
+import { prepaidRows } from "@/lib/data/prepaid";
+import { PrepaidSimulator } from "./prepaid-sim";
 import { PrintButton, SiteTable, TrendChart, type SiteRow, type TrendPoint } from "./reports-client";
 
 export const metadata: Metadata = { title: "報表" };
@@ -32,6 +35,10 @@ export default async function ReportsPage() {
     await Promise.all(upTo.map(async (p) => [p.id, await periodSummary(p, sites)] as const)),
   );
   const summary = summaries.get(period.id)!;
+  const calc = await getCalcSettings(period);
+  const simRows = await prepaidRows(period, sites, calc);
+  const perHa = (calc.planKgPerHa ?? 0) + (calc.guideKgPerHa ?? 0);
+  const planNote = perHa ? `每公頃 ${fmt(perHa)} 公斤` : null;
   const t = summary.totals;
   const avgPerKg = perKg(t.deposit, t.depositKg);
 
@@ -181,6 +188,15 @@ export default async function ReportsPage() {
             {unpaid.length > 0 && <span>{unpaid.map((s) => s.name).join("、")}的入簿都還沒填，所以不列入金額。</span>}
           </div>
         )}
+      </section>
+
+      <section aria-labelledby="prepaid-h" className={card}>
+        <PrepaidSimulator
+          rows={simRows}
+          sites={summary.sites.map((x) => ({ id: x.site.id, name: x.site.name }))}
+          rates={calc.rates}
+          planNote={planNote}
+        />
       </section>
 
       <section aria-labelledby="farmer-h" className={card}>
