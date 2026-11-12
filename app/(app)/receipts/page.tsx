@@ -8,7 +8,7 @@ import { getDb, schema } from "@/lib/db";
 import { getCurrentPeriod, periodLabel } from "@/lib/data/period";
 import { countBySite, listGrainRecords } from "@/lib/data/grain";
 import { getCalcSettings } from "@/lib/data/settings";
-import { listSites, pickSite } from "@/lib/data/sites";
+import { listSites, pickSite, rememberedSite } from "@/lib/data/sites";
 import { ReceiptsClient } from "./receipts-client";
 import type { ReceiptData } from "./receipt-slip";
 
@@ -18,7 +18,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const db = getDb();
   const [user, period, sites] = await Promise.all([requireUser(), getCurrentPeriod(), listSites()]);
   const counts = await countBySite(period.id);
-  const site = pickSite(sites, counts, (await searchParams).site);
+  const site = pickSite(sites, counts, (await searchParams).site, await rememberedSite());
   if (!site) return <PageHeader title="收款單" description="還沒有任何收購點，請先到「設定 → 收購點」新增。" />;
   const [records, settings, accounts] = await Promise.all([
     listGrainRecords(period.id, site.id),
@@ -67,7 +67,12 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
       canManage={user.role === "admin"}
     >
       <div className="print:hidden">
-        <PageHeader eyebrow="收款單" title={site.name} description={`${periodLabel(period)}・A4 一頁 6 張，跟原本的收款單產生器同一個版面`} />
+        <PageHeader
+          eyebrow="收款單"
+          title={site.name}
+          context={`${periodLabel(period)}・收購點：${site.name}`}
+          description="A4 一頁 6 張，跟原本的收款單產生器同一個版面"
+        />
       </div>
       <ReceiptsClient key={`${period.id}-${site.id}`} siteName={site.name} receipts={receipts} accounts={accounts} />
     </SitePicker>

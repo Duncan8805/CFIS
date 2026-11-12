@@ -52,12 +52,12 @@ export function SitesManager({
         actions={
           <>
             {inactive > 0 && (
-              <label className="flex items-center gap-2 text-sm text-muted">
+              <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px] text-ink-2">
                 <input
                   type="checkbox"
                   checked={showInactive}
                   onChange={(e) => setShowInactive(e.target.checked)}
-                  className="size-4 accent-brand-600"
+                  className="size-[22px] shrink-0 accent-brand-600"
                 />
                 顯示已停用（{inactive}）
               </label>
@@ -69,17 +69,17 @@ export function SitesManager({
         }
       />
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
-        <section aria-label="收購點清單" className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line bg-white">
+        <section aria-label="收購點清單" className="min-w-0 flex-1 overflow-hidden rounded-[4px] border border-line bg-white">
           <div className="overflow-x-auto">
-            <table className="tabular w-full min-w-[720px] whitespace-nowrap text-[15px]">
+            <table className="w-full min-w-[720px] border-collapse whitespace-nowrap text-[15px] [&_td]:border [&_td]:border-line-soft [&_th]:border [&_th]:border-line-soft">
               <thead>
-                <tr className="border-b border-line bg-panel text-left text-sm text-ink-2">
-                  <th className="px-3 py-2.5 font-bold">收購點</th>
-                  <th className="px-3 py-2.5 font-bold">週報表名稱</th>
-                  <th className="px-3 py-2.5 font-bold">繳售業者</th>
-                  <th className="px-3 py-2.5 font-bold">備註填</th>
-                  <th className="px-3 py-2.5 font-bold">利、運費</th>
-                  <th className="px-3 py-2.5 text-right font-bold">本期筆數</th>
+                <tr className="border-b-2 border-line bg-head text-left text-[15px] text-ink-2">
+                  <th className="px-2.5 py-2 font-bold">收購點</th>
+                  <th className="px-2.5 py-2 font-bold">週報表名稱</th>
+                  <th className="px-2.5 py-2 font-bold">繳售業者</th>
+                  <th className="px-2.5 py-2 font-bold">備註填</th>
+                  <th className="px-2.5 py-2 font-bold">利、運費</th>
+                  <th className="px-2.5 py-2 text-right font-bold">本期筆數</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,23 +90,23 @@ export function SitesManager({
                     <tr
                       key={s.id}
                       onClick={() => setEditing(s.id)}
-                      className={`cursor-pointer border-t border-line-soft ${
-                        selected ? "bg-brand-50 shadow-[inset_3px_0_0_#2F6F4F]" : "hover:bg-paper"
-                      } ${s.active ? "" : "text-ghost"}`}
+                      className={`cursor-pointer ${
+                        selected ? "bg-brand-50 font-bold outline outline-1 -outline-offset-1 outline-brand-600" : "hover:bg-paper"
+                      } ${s.active ? "" : "text-muted"}`}
                     >
-                      <td className="px-3 py-2.5 font-bold">
-                        <button type="button" className="text-left" onClick={() => setEditing(s.id)}>
+                      <td className="px-2.5 py-1 font-bold">
+                        <button type="button" className="min-h-9 text-left underline-offset-4 hover:underline" onClick={() => setEditing(s.id)}>
                           {s.name}
                         </button>
-                        {!s.active && <span className="ml-2 text-xs font-normal">停用</span>}
+                        {!s.active && <span className="ml-2 text-[13px] font-normal">停用</span>}
                       </td>
-                      <td className="px-3 py-2.5">{s.weeklySheetName}</td>
-                      <td className="px-3 py-2.5">{s.sellTo}</td>
-                      <td className={`px-3 py-2.5 ${missing ? "text-warn-800" : ""}`}>
+                      <td className="px-2.5 py-2">{s.weeklySheetName}</td>
+                      <td className="px-2.5 py-2">{s.sellTo}</td>
+                      <td className={`px-2.5 py-2 ${missing ? "bg-warn-50 text-warn-800" : ""}`}>
                         {s.remarkMode === "agent_contact" ? `代收人${s.agentContact ? "" : "（未填）"}` : "農民電話"}
                       </td>
-                      <td className="px-3 py-2.5">{s.roundingMode === "truncate" ? "捨去" : "不捨去"}</td>
-                      <td className="px-3 py-2.5 text-right">{s.currentCount}</td>
+                      <td className="px-2.5 py-2">{s.roundingMode === "truncate" ? "捨去" : "不捨去"}</td>
+                      <td className="tabular px-2.5 py-2 text-right">{s.currentCount}</td>
                     </tr>
                   );
                 })}
@@ -173,15 +173,15 @@ function SiteEditor({
       return null;
     });
 
-  const label = "flex flex-col gap-1.5 text-[13px] text-muted";
-  const radio = "flex items-center gap-2 text-[15px] text-ink";
+  const label = "flex flex-col gap-1.5 text-[14px] text-ink-2";
+  const radio = "flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px] text-ink";
 
   return (
-    <aside aria-label="編輯收購點" className="flex w-full shrink-0 flex-col gap-4 rounded-xl border border-line bg-white p-5 xl:w-[380px]">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 text-lg font-bold">{initial.id ? `編輯：${initial.name}` : "新增收購點"}</h2>
-        <button type="button" onClick={onClose} aria-label="關閉" className="size-9 rounded-lg text-xl text-muted hover:bg-paper">
-          ×
+    <aside aria-label="編輯收購點" className="flex w-full shrink-0 flex-col gap-4 rounded-[4px] border border-line bg-white p-4 xl:w-[380px]">
+      <div className="-mx-4 -mt-4 flex items-center gap-2 border-b border-line bg-head px-4 py-1.5">
+        <h2 className="flex-1 text-[16px] font-bold">{initial.id ? `編輯：${initial.name}` : "新增收購點"}</h2>
+        <button type="button" onClick={onClose} className="inline-flex min-h-11 shrink-0 items-center rounded-[4px] border border-field bg-white px-3 text-[15px] text-ink hover:border-brand-600">
+          關閉
         </button>
       </div>
       <label className={label}>
@@ -202,13 +202,13 @@ function SiteEditor({
         <input className={inputClass} value={form.sellTo} onChange={(e) => set("sellTo", e.target.value)} />
       </label>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-[13px] text-muted">週報表備註要填</legend>
+        <legend className="mb-1 text-[14px] text-ink-2">週報表備註要填</legend>
         <label className={radio}>
           <input
             type="radio"
             checked={form.remarkMode === "farmer_phone"}
             onChange={() => set("remarkMode", "farmer_phone")}
-            className="accent-brand-600"
+            className="size-[22px] shrink-0 accent-brand-600"
           />
           每位農民自己的電話
         </label>
@@ -217,7 +217,7 @@ function SiteEditor({
             type="radio"
             checked={form.remarkMode === "agent_contact"}
             onChange={() => set("remarkMode", "agent_contact")}
-            className="accent-brand-600"
+            className="size-[22px] shrink-0 accent-brand-600"
           />
           代收人的電話
         </label>
@@ -234,13 +234,13 @@ function SiteEditor({
         </label>
       )}
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-[13px] text-muted">利、運費</legend>
+        <legend className="mb-1 text-[14px] text-ink-2">利、運費</legend>
         <label className={radio}>
           <input
             type="radio"
             checked={form.roundingMode === "truncate"}
             onChange={() => set("roundingMode", "truncate")}
-            className="accent-brand-600"
+            className="size-[22px] shrink-0 accent-brand-600"
           />
           無條件捨去（ROUNDDOWN）
         </label>
@@ -249,7 +249,7 @@ function SiteEditor({
             type="radio"
             checked={form.roundingMode === "none"}
             onChange={() => set("roundingMode", "none")}
-            className="accent-brand-600"
+            className="size-[22px] shrink-0 accent-brand-600"
           />
           不捨去，保留小數
         </label>
@@ -264,30 +264,30 @@ function SiteEditor({
         />
       </label>
 
-      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-[4px] border border-red-700 bg-red-50 px-3 py-2 text-[15px] text-red-800">{error}</p>}
       <div className="flex gap-2.5">
         <button
           type="button"
           disabled={busy || (!!initial.id && !dirty)}
           onClick={() => save({ ...form, weeklySheetName: form.weeklySheetName.trim() || form.name })}
-          className="h-11 flex-1 rounded-[10px] bg-brand-600 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+          className="min-h-11 flex-1 rounded-[4px] bg-brand-600 text-[15px] font-bold text-white hover:bg-brand-700 disabled:opacity-40"
         >
           {busy ? "儲存中…" : initial.id ? "儲存" : "新增"}
         </button>
-        <button type="button" onClick={onClose} className="h-11 rounded-[10px] border border-field px-4">
+        <button type="button" onClick={onClose} className="min-h-11 rounded-[4px] border border-field bg-white px-4 text-[15px]">
           取消
         </button>
       </div>
 
       {initial.id && counts && (
         <div className="flex flex-col gap-2 border-t border-line-soft pt-4">
-          <div className="text-sm font-bold">停用或刪除</div>
+          <div className="text-[15px] font-bold">停用或刪除</div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => save({ ...initial, active: !initial.active })}
-              className="h-10 rounded-[10px] border border-field px-4 text-sm hover:border-brand-500"
+              className="min-h-11 rounded-[4px] border border-field bg-white px-4 text-[15px] hover:border-brand-600"
             >
               {initial.active ? "停用這個收購點" : "重新啟用"}
             </button>
@@ -295,12 +295,12 @@ function SiteEditor({
               type="button"
               disabled={busy || counts.total > 0}
               onClick={remove}
-              className="h-10 rounded-[10px] border border-red-200 px-4 text-sm text-red-700 disabled:border-line disabled:text-ghost"
+              className="min-h-11 rounded-[4px] border border-red-300 bg-white px-4 text-[15px] text-red-700 disabled:border-line disabled:text-muted"
             >
               刪除
             </button>
           </div>
-          <p className="text-[13px] text-muted">
+          <p className="text-[14px] text-muted">
             {counts.total > 0
               ? `還有 ${counts.total} 筆公糧資料${counts.total !== counts.current ? `（本期 ${counts.current} 筆）` : ""}，不能刪除，只能停用。沒有任何資料的收購點才能刪除。`
               : "這個收購點沒有任何公糧資料，可以刪除。"}

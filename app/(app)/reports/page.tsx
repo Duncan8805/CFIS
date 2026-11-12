@@ -95,22 +95,22 @@ export default async function ReportsPage() {
     { label: "平均入簿／公斤", value: `NT$ ${fmt(avgPerKg, 2)}`, sub: "入簿總額 ÷ 有入簿的公斤" },
   ];
 
-  const card = "rounded-[14px] border border-line bg-white p-5";
+  const card = "rounded-[4px] border border-line bg-white p-4";
 
   return (
-    <div className="flex max-w-[1180px] flex-col gap-5">
+    <div className="flex max-w-[1280px] flex-col gap-4">
       <PageHeader
         title="報表"
-        description={`${periodLabel(period)}・${summary.sites.filter((s) => s.count > 0).length} 個收購點・${fmt(t.count)} 筆`}
+        context={`${periodLabel(period)}・${summary.sites.filter((s) => s.count > 0).length} 個收購點・${fmt(t.count)} 筆`}
         actions={<PrintButton />}
       />
 
-      <section aria-label="本期金額" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <section aria-label="本期金額" className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line-soft lg:grid-cols-3">
         {kpis.map((k) => (
-          <div key={k.label} className="flex min-w-0 flex-col gap-1 rounded-[14px] border border-line bg-white px-4 py-4 md:px-5">
-            <span className="text-[13px] text-muted">{k.label}</span>
-            <span className={`tabular truncate text-xl font-bold md:text-[26px] ${k.brand ? "text-brand-700" : "text-ink"}`}>{k.value}</span>
-            <span className="truncate text-[13px] text-muted">{k.sub}</span>
+          <div key={k.label} className="flex min-w-0 flex-col gap-0.5 bg-white px-4 py-3">
+            <span className="text-[14px] text-muted">{k.label}</span>
+            <span className={`tabular truncate text-xl font-semibold md:text-[24px] ${k.brand ? "text-brand-700" : "text-ink"}`}>{k.value}</span>
+            <span className="truncate text-[14px] text-muted">{k.sub}</span>
           </div>
         ))}
       </section>
@@ -126,7 +126,7 @@ export default async function ReportsPage() {
 
       <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
         <section aria-labelledby="week-h" className={card}>
-          <h2 id="week-h" className="text-[17px] font-bold">
+          <h2 id="week-h" className="text-[16px] font-bold">
             每週進倉公斤
           </h2>
           <p className="text-[13px] text-muted">依週報表的濕穀進儲日期，看收穀集中在哪幾週（每週從星期一算）</p>
@@ -141,32 +141,32 @@ export default async function ReportsPage() {
               )}
             </>
           ) : (
-            <p className="mt-6 text-sm text-ghost">週報表還沒有填進倉日期</p>
+            <p className="mt-6 text-[15px] text-muted">週報表還沒有填進倉日期</p>
           )}
         </section>
         <section aria-labelledby="moist-h" className={card}>
-          <h2 id="moist-h" className="text-[17px] font-bold">
+          <h2 id="moist-h" className="text-[16px] font-bold">
             水分分布
           </h2>
           <p className="text-[13px] text-muted">週報表 {fmt(moistCount)} 筆的水分</p>
           {moistList.length ? (
             <Bars items={moistList.map(([m, n]) => ({ label: `${m}%`, value: n, text: fmt(n) }))} max={moistMax} />
           ) : (
-            <p className="mt-6 text-sm text-ghost">週報表還沒有填水分</p>
+            <p className="mt-6 text-[15px] text-muted">週報表還沒有填水分</p>
           )}
         </section>
       </div>
 
       <section aria-labelledby="site-h" className={`${card} !p-0 overflow-hidden`}>
-        <div className="flex flex-wrap items-baseline gap-3 px-5 pb-2 pt-4">
-          <h2 id="site-h" className="text-[17px] font-bold">
+        <div className="flex flex-wrap items-baseline gap-3 border-b border-line bg-head px-4 py-2.5">
+          <h2 id="site-h" className="text-[16px] font-bold">
             各收購點
           </h2>
-          <span className="text-[13px] text-muted">點欄位名稱排序・入簿／公斤明顯低於平均的用橘色標出</span>
+          <span className="text-[14px] text-muted">點欄位名稱排序・入簿／公斤明顯低於平均的用橘色標出</span>
         </div>
         <SiteTable rows={siteRows} totals={{ kg: t.kg, deposit: t.deposit, collect: t.collect, freight: t.freight, perKg: avgPerKg }} />
         {(lowSites.length > 0 || unpaid.length > 0) && (
-          <div className="flex flex-col gap-1 border-t border-warn-line bg-warn-50 px-5 py-3 text-sm">
+          <div className="flex flex-col gap-1 border-t border-warn-line bg-warn-50 px-4 py-3 text-[15px]">
             <b>值得看一下</b>
             {lowSites.length > 0 && (
               <span>
@@ -184,23 +184,23 @@ export default async function ReportsPage() {
       </section>
 
       <section aria-labelledby="farmer-h" className={card}>
-        <h2 id="farmer-h" className="mb-3 text-[17px] font-bold">
+        <h2 id="farmer-h" className="mb-3 text-[16px] font-bold">
           農民
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl bg-panel px-4 py-3">
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-[4px] border border-line bg-line-soft sm:grid-cols-3">
+          <div className="bg-white px-4 py-3">
             <div className="text-[13px] text-muted">本期農民人數</div>
             <div className="tabular text-2xl font-bold">{fmt(fk.length)}</div>
-            <div className="text-xs text-muted">依農民名冊；補上檔號後更準</div>
+            <div className="text-[13px] text-muted">依農民名冊；補上檔號後更準</div>
           </div>
-          <div className="rounded-xl bg-panel px-4 py-3">
+          <div className="bg-white px-4 py-3">
             <div className="text-[13px] text-muted">每筆公斤中位數</div>
             <div className="tabular text-2xl font-bold">{fmt(median(recordKg))}</div>
           </div>
-          <div className="rounded-xl bg-panel px-4 py-3">
+          <div className="bg-white px-4 py-3">
             <div className="text-[13px] text-muted">前 10% 農民佔</div>
             <div className="tabular text-2xl font-bold">{fmt(topShare * 100, 1)}%</div>
-            <div className="text-xs text-muted">的公斤</div>
+            <div className="text-[13px] text-muted">的公斤</div>
           </div>
         </div>
         <p className="mt-3 text-[13px] text-muted">要看某一位農民歷期的繳穀紀錄，到「農民」用檔號或姓名找。</p>
@@ -223,9 +223,9 @@ function Bars({
       <div className="flex min-w-max items-end gap-2" style={{ height: 196 }}>
         {items.map((it) => (
           <div key={it.label} className="flex w-12 flex-col items-center justify-end gap-1 self-stretch">
-            <span className="tabular text-xs text-ink-2">{it.text}</span>
+            <span className="tabular text-[13px] text-ink-2">{it.text}</span>
             <div
-              className={`w-9 rounded-t-md ${highlight?.(it.value) ? "bg-brand-600" : "bg-[#8FB59E]"}`}
+              className={`w-9 rounded-t-[2px] ${highlight?.(it.value) ? "bg-brand-600" : "bg-brand-200"}`}
               style={{ height: `${Math.max(2, Math.round((it.value / max) * 160))}px` }}
             />
           </div>
@@ -233,7 +233,7 @@ function Bars({
       </div>
       <div className="flex min-w-max gap-2 border-t border-line pt-1.5">
         {items.map((it) => (
-          <span key={it.label} className="w-12 text-center text-xs text-muted">
+          <span key={it.label} className="w-12 text-center text-[13px] text-muted">
             {it.label}
           </span>
         ))}

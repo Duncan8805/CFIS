@@ -91,30 +91,30 @@ export function ImportClient({ context }: { context: ImportContext }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="grid gap-3 rounded-xl border border-line bg-white p-4 md:grid-cols-[1fr_1fr_auto] md:items-end md:p-5">
+      <section className="grid gap-3 rounded-[4px] border border-line bg-white p-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
         <FilePicker label="公糧 Excel（必選）" file={grainFile} onChange={setGrainFile} />
         <FilePicker label="週報表 Excel（建議一起選）" file={weeklyFile} onChange={setWeeklyFile} />
         <button
           type="button"
           onClick={analyze}
           disabled={!grainFile || parsing}
-          className="rounded-lg bg-brand-600 px-5 py-2.5 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+          className="min-h-11 rounded-[4px] bg-brand-600 px-5 text-[15px] font-bold text-white hover:bg-brand-700 disabled:opacity-40"
         >
           {parsing ? "讀取中…" : "讀取並比對"}
         </button>
       </section>
 
-      {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-[4px] border border-red-700 bg-red-50 px-4 py-3 text-[15px] text-red-800">{error}</p>}
 
       {plan && (
         <>
           <Notes plan={plan} />
-          <section className="overflow-hidden rounded-xl border border-line bg-white">
-            <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
-              <h2 className="font-bold">比對結果</h2>
-              <span className="text-sm text-muted">展開可以看每一筆差異；確認後勾選要匯入的收購點</span>
+          <section className="overflow-hidden rounded-[4px] border border-line bg-white">
+            <div className="flex flex-wrap items-center gap-3 border-b border-line bg-head px-4 py-2.5">
+              <h2 className="text-[16px] font-bold">比對結果</h2>
+              <span className="text-[14px] text-muted">展開可以看每一筆差異；確認後勾選要匯入的收購點</span>
             </div>
-            <ul className="divide-y divide-black/5">
+            <ul className="divide-y divide-line-soft">
               {plan.sites.map((s) => (
                 <SiteRow
                   key={s.siteId}
@@ -128,12 +128,12 @@ export function ImportClient({ context }: { context: ImportContext }) {
             </ul>
           </section>
 
-          <div className="sticky bottom-20 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white/95 p-4 shadow-sm backdrop-blur md:bottom-4">
-            <span className="text-sm">
+          <div className="sticky bottom-20 flex flex-wrap items-center gap-3 rounded-[4px] border-2 border-line bg-white px-4 py-3 md:bottom-4">
+            <span className="text-[15px]">
               已選 {chosen.length} 個收購點、{chosen.reduce((n, s) => n + s.records.length, 0)} 筆
-              {overwriting.length > 0 && <span className="text-warn-700">（{overwriting.length} 個會取代現有資料）</span>}
+              {overwriting.length > 0 && <span className="font-bold text-warn-700">（{overwriting.length} 個會取代現有資料）</span>}
             </span>
-            <span className="text-sm text-muted">
+            <span className="text-[15px] text-muted">
               {status.state === "running" && `寫入中… ${status.done}/${status.total}`}
               {status.state === "done" && status.message}
             </span>
@@ -141,7 +141,7 @@ export function ImportClient({ context }: { context: ImportContext }) {
               type="button"
               onClick={runImport}
               disabled={!chosen.length || status.state === "running"}
-              className="ml-auto rounded-lg bg-brand-600 px-5 py-2.5 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+              className="ml-auto min-h-11 rounded-[4px] bg-brand-600 px-6 text-[15px] font-bold text-white hover:bg-brand-700 disabled:opacity-40"
             >
               匯入
             </button>
@@ -154,15 +154,15 @@ export function ImportClient({ context }: { context: ImportContext }) {
 
 function FilePicker({ label, file, onChange }: { label: string; file: File | null; onChange: (f: File | null) => void }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-muted">{label}</span>
+    <label className="flex flex-col gap-1 text-[15px]">
+      <span className="text-ink-2">{label}</span>
       <input
         type="file"
         accept=".xlsx,.xlsm"
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-        className="rounded-lg border border-field px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-brand-700"
+        className="min-h-11 rounded-[4px] border border-field bg-white px-2 py-1.5 text-[15px] file:mr-3 file:min-h-8 file:rounded-[4px] file:border file:border-field file:bg-head file:px-3 file:text-[15px] file:text-ink"
       />
-      {file && <span className="truncate text-xs text-faint">{file.name}</span>}
+      {file && <span className="truncate text-[14px] text-muted">{file.name}</span>}
     </label>
   );
 }
@@ -175,7 +175,7 @@ function Notes({ plan }: { plan: ImportPlan }) {
   ].filter(Boolean) as string[];
   if (!notes.length) return null;
   return (
-    <ul className="list-disc space-y-1 rounded-xl border border-amber-200 bg-warn-50 py-3 pl-8 pr-4 text-sm text-amber-900">
+    <ul className="list-disc space-y-1 rounded-[4px] border border-warn-line bg-warn-50 py-3 pl-8 pr-4 text-[15px] text-warn-800">
       {notes.map((n) => (
         <li key={n}>{n}</li>
       ))}
@@ -204,33 +204,33 @@ function SiteRow({
   return (
     <li className="px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <label className="flex min-w-32 items-center gap-2 font-bold">
-          <input type="checkbox" checked={checked} onChange={onToggle} className="size-4 accent-brand-600" />
+        <label className="flex min-h-11 min-w-32 cursor-pointer items-center gap-2.5 font-bold">
+          <input type="checkbox" checked={checked} onChange={onToggle} className="size-[22px] shrink-0 accent-brand-600" />
           {site.siteName}
         </label>
-        <span className="tabular text-sm text-ink-2">{site.records.length} 筆</span>
-        <span className="tabular text-sm text-ink-2">{kg.toLocaleString("zh-TW")} 公斤</span>
-        <span className="tabular text-sm text-ink-2">
-          週報表 {site.weeklyMatched}/{site.records.length}
+        <span className="text-[15px] text-ink-2"><span className="tabular">{site.records.length}</span> 筆</span>
+        <span className="text-[15px] text-ink-2"><span className="tabular">{kg.toLocaleString("zh-TW")}</span> 公斤</span>
+        <span className="text-[15px] text-ink-2">
+          週報表 <span className="tabular">{site.weeklyMatched}/{site.records.length}</span>
         </span>
         {ownRounding.length > 0 && (
-          <span className="text-sm text-muted">
+          <span className="text-[15px] text-muted">
             {ownRounding.length} 筆照 Excel 改用{ownRounding[0].roundingMode === "truncate" ? "無條件捨去" : "不捨去"}
           </span>
         )}
-        {existing > 0 && <span className="text-sm text-warn-700">系統已有 {existing} 筆</span>}
-        {result && <span className={`text-sm ${result.startsWith("✓") ? "text-brand-700" : "text-red-700"}`}>{result}</span>}
+        {existing > 0 && <span className="text-[15px] font-bold text-warn-700">系統已有 {existing} 筆</span>}
+        {result && <span className={`text-[15px] font-bold ${result.startsWith("✓") ? "text-brand-700" : "text-red-700"}`}>{result}</span>}
       </div>
       {site.issues.length > 0 && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-sm text-muted">
+          <summary className="flex min-h-11 cursor-pointer items-center text-[15px] text-ink-2">
             {[...byKind].map(([k, n]) => `${ISSUE_LABEL[k]} ${n}`).join("・")}
           </summary>
-          <ul className="mt-2 space-y-1 text-sm">
+          <ul className="mt-2 space-y-1 text-[15px]">
             {site.issues.map((i, idx) => (
               <li key={idx} className="flex gap-2">
-                <span className="shrink-0 rounded bg-paper px-1.5 text-xs leading-5 text-muted">{ISSUE_LABEL[i.kind]}</span>
-                <span className="text-faint">
+                <span className="shrink-0 rounded-[4px] border border-line bg-head px-1.5 text-[13px] leading-5 text-ink-2">{ISSUE_LABEL[i.kind]}</span>
+                <span className="text-muted">
                   {i.sheet} 第 {i.row} 列
                 </span>
                 <span>{i.message}</span>

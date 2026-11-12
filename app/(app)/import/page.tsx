@@ -12,7 +12,7 @@ export default async function ImportPage() {
     return (
       <>
         <PageHeader title="匯入 Excel" />
-        <p className="text-sm text-black/60">只有管理員可以匯入資料。</p>
+        <p className="rounded-[4px] border border-line bg-white p-5 text-[15px] text-muted">只有管理員可以匯入資料。</p>
       </>
     );
   }

@@ -1,5 +1,9 @@
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { getDb, schema } from "@/lib/db";
+import { SITE_COOKIE } from "./pick-site";
+
+export { pickSite, SITE_COOKIE } from "./pick-site";
 
 const s = schema.sites;
 const g = schema.grainRecords;
@@ -23,7 +27,7 @@ export async function weeklyPendingBySite(periodId: number): Promise<Map<number,
   return new Map(rows.map((r) => [r.siteId, Number(r.n)]));
 }
 
-/** 沒指定收購點時，打開第一個有資料的 */
-export function pickSite<T extends { id: number }>(sites: T[], counts: Map<number, number>, param: string | undefined): T | undefined {
-  return sites.find((x) => String(x.id) === param) ?? sites.find((x) => counts.get(x.id)) ?? sites[0];
+/** 使用者上次選的收購點（收購點選單記在 cookie），網址沒有 ?site= 時用 */
+export async function rememberedSite(): Promise<string | undefined> {
+  return (await cookies()).get(SITE_COOKIE)?.value;
 }

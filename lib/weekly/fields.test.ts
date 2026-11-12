@@ -68,3 +68,23 @@ describe("週報表欄位", () => {
     });
   });
 });
+
+describe("全形數字（中文輸入法）", () => {
+  it.each([
+    ["１１／１２", "2026-11-12"],
+    ["６月２８日", "2026-06-28"],
+    ["０６２８", "2026-06-28"],
+    ["１１５／６／２８", "2026-06-28"],
+    ["６－２８", "2026-06-28"],
+  ])("日期「%s」→ %s", (text, iso) => {
+    expect(parseDate(text, 2026)).toBe(iso);
+  });
+  it("水分", () => {
+    expect(parseWeeklyField("moisture", "２７", defaults)).toEqual({ ok: true, patch: { moisture: 27 } });
+    expect(parseWeeklyField("moisture", "１０１", defaults).ok).toBe(false);
+    expect(parseWeeklyField("plannedSellDate", "１１／１２", defaults)).toEqual({
+      ok: true,
+      patch: { plannedSellDate: "2026-11-12" },
+    });
+  });
+});

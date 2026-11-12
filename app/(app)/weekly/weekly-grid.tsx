@@ -47,10 +47,10 @@ export function WeeklyGrid({ rows, save, printMode }: { rows: WRow[]; save: Week
 
   const subtotal = (label: string, kg: number, wet: number) => (
     <tr className="bg-head font-bold">
-      <td />
+      <td className="border border-line" />
       {columns.map((c, i) => (
-        <td key={i} className="border-l border-line-soft px-2 py-1.5 text-right">
-          {c.kind === "info" && c.key === "name" ? <span className="block text-left">{label}</span> : null}
+        <td key={i} className="tabular border border-line px-2 py-2 text-right">
+          {c.kind === "info" && c.key === "name" ? <span className="block text-left font-sans">{label}</span> : null}
           {c.kind === "info" && c.key === "kg" ? fmt(kg) : null}
           {c.kind === "info" && c.key === "wet" ? fmt(wet) : null}
         </td>
@@ -59,15 +59,15 @@ export function WeeklyGrid({ rows, save, printMode }: { rows: WRow[]; save: Week
   );
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-white">
-      <table data-grid={GRID_ID} className="tabular w-full min-w-[1080px] border-collapse text-[15px]">
-        <thead className="sticky top-0 z-10 bg-head text-sm">
-          <tr>
-            <th className="w-10 border-b border-line px-2 py-2 text-faint">#</th>
+    <div className="overflow-x-auto rounded-[4px] border border-line bg-white">
+      <table data-grid={GRID_ID} className="w-full min-w-[1040px] border-collapse text-[15px]">
+        <thead className="bg-head text-[15px]">
+          <tr className="border-b-2 border-line">
+            <th className="w-10 border border-line-soft px-1 py-2 text-[13px] font-medium text-muted">#</th>
             {columns.map((c) => (
               <th
                 key={c.label}
-                className={`${c.width} border-b border-l border-line px-2 py-2 font-bold ${c.kind === "info" ? "text-muted" : ""}`}
+                className={`${c.width} border border-line-soft px-2 py-2 text-left font-bold ${c.kind === "info" ? "bg-line-soft text-ink-2" : "text-ink"}`}
               >
                 {c.label}
               </th>
@@ -84,21 +84,21 @@ export function WeeklyGrid({ rows, save, printMode }: { rows: WRow[]; save: Week
             return (
               <Fragment key={r.row.entryId}>
                 <tr className="hover:bg-brand-50/40">
-                  <td className="border-b border-line-soft px-2 text-center text-xs text-ghost">
+                  <td className="tabular border border-line-soft bg-panel px-1 text-center text-[13px] text-muted">
                     {r.saving ? <span className="inline-block size-2 animate-pulse rounded-full bg-brand-500" title="儲存中" /> : i + 1}
                   </td>
                   {columns.map((c) =>
                     c.kind === "info" ? (
                       <td
                         key={c.key}
-                        className={`border-b border-l border-line-soft bg-panel px-2 ${c.key === "name" ? "" : "text-right"} ${
-                          c.key === "name" ? "text-black/80" : "text-muted"
+                        className={`border border-line-soft bg-calc px-2 ${c.key === "name" ? "" : "tabular text-right"} ${
+                          c.key === "name" ? "text-ink" : "text-ink-2"
                         }`}
                       >
                         {infoValue(r, c.key)}
                       </td>
                     ) : (
-                      <td key={c.field} className="border-b border-l border-line-soft p-0">
+                      <td key={c.field} className={`border border-line-soft p-0 ${c.field === "sellTo" || c.field === "remark" ? "" : "tabular"}`}>
                         <GridCell
                           gridId={GRID_ID}
                           row={i}
@@ -129,8 +129,8 @@ export function WeeklyGrid({ rows, save, printMode }: { rows: WRow[]; save: Week
           )}
         </tbody>
       </table>
-      <p className="border-t border-line px-3 py-2 text-xs text-faint">
-        日期可以打 6/28 或 0628・橘色字是跟收購點預設不同的內容・方向鍵移動、Enter 往下、離開格子自動儲存
+      <p className="border-t border-line px-3 py-2.5 text-[14px] leading-relaxed text-muted">
+        日期可以打 6/28 或 0628・橘色字是跟收購點預設不同的內容・方向鍵移動、Enter 往下、離開格子自動儲存・紅框是沒存到的格子：改好後按 Enter 再存一次，或按 Esc 恢復原本的值
       </p>
     </div>
   );

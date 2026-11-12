@@ -4,12 +4,16 @@ import { useCallback, useRef, useState } from "react";
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
+/** 送不出去（網路斷了、伺服器沒回應）時給使用者看的訊息 */
+export const SAVE_FAILED_MESSAGE = "沒存到：網路可能斷了，請再按一次儲存";
+
 /**
  * 管理一張表的資料列與存檔（公糧、週報表共用）：
  * - 先更新畫面，再送到伺服器
  * - 同一列的存檔排隊送出
  * - 還沒確認的欄位疊在伺服器回應上面，避免較早的回應把後來打的值蓋掉
- * - 失敗時只還原這次改的欄位
+ * - 失敗（含網路斷線）時只還原這次改的欄位，表格顯示的一律是真的存進去的值；
+ *   使用者打的字留在格子／編輯視窗裡並標成「沒存到」，不會不見
  */
 export function useRecordSaver<T extends object, P extends object>({
   initial,
@@ -49,10 +53,17 @@ export function useRecordSaver<T extends object, P extends object>({
       const run = () => send(id, patch);
       const job = (queues.current.get(id) ?? Promise.resolve()).then(run, run);
       queues.current.set(id, job);
-      const result = await job;
-      if (queues.current.get(id) === job) {
-        queues.current.delete(id);
-        markSaving(id, false);
+      let result: Result<T>;
+      try {
+        result = await job;
+      } catch {
+        // 網路斷了、伺服器沒回應：當作沒存到，不要讓畫面一直停在「儲存中」
+        result = { ok: false, error: SAVE_FAILED_MESSAGE };
+      } finally {
+        if (queues.current.get(id) === job) {
+          queues.current.delete(id);
+          markSaving(id, false);
+        }
       }
 
       // 這次送出的欄位已有結果，從「未確認」移除（之後又改過的保留）

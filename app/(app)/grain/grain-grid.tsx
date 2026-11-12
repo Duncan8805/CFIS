@@ -15,20 +15,20 @@ type Column =
   | { kind: "calc"; key: CalcKey; label: string; sub?: string };
 
 const COLUMNS: Column[] = [
-  { kind: "edit", field: "fileNo", label: "檔號", list: "farmer-file-nos", className: "w-[118px] text-brand-700 font-medium" },
-  { kind: "edit", field: "code", label: "編號", className: "w-16 text-faint" },
+  { kind: "edit", field: "fileNo", label: "檔號", list: "farmer-file-nos", className: "tabular w-[112px] text-brand-700 font-medium" },
+  { kind: "edit", field: "code", label: "編號", className: "tabular w-16 text-muted" },
   { kind: "edit", field: "name", label: "姓名", list: "farmer-names", className: "font-medium" },
-  { kind: "edit", field: "phone", label: "電話", className: "text-ink-2" },
-  { kind: "edit", field: "fen", label: "分", sub: "核定面積", numeric: true, className: "w-24" },
-  { kind: "edit", field: "plan", label: "計畫收購", numeric: true, className: "w-24" },
-  { kind: "edit", field: "guide", label: "輔導收購", numeric: true, className: "w-24" },
+  { kind: "edit", field: "phone", label: "電話", className: "tabular text-ink-2" },
+  { kind: "edit", field: "fen", label: "分", sub: "核定面積", numeric: true, className: "tabular w-[88px]" },
+  { kind: "edit", field: "plan", label: "計畫收購", numeric: true, className: "tabular w-[88px]" },
+  { kind: "edit", field: "guide", label: "輔導收購", numeric: true, className: "tabular w-[88px]" },
   { kind: "calc", key: "kg", label: "公斤", sub: "計畫＋輔導" },
   { kind: "calc", key: "interest", label: "利" },
   { kind: "calc", key: "freight", label: "運費" },
   { kind: "calc", key: "prepaid", label: "先付" },
-  { kind: "edit", field: "deposit", label: "入簿", numeric: true, className: "w-28" },
-  { kind: "edit", field: "collect", label: "收", sub: "可填「扣」", numeric: true, className: "w-28" },
-  { kind: "edit", field: "address", label: "地址", className: "min-w-48 text-faint" },
+  { kind: "edit", field: "deposit", label: "入簿", numeric: true, className: "tabular w-[104px]" },
+  { kind: "edit", field: "collect", label: "收", sub: "可填「扣」", numeric: true, className: "tabular w-[104px]" },
+  { kind: "edit", field: "address", label: "地址", className: "min-w-48 text-muted" },
 ];
 const EDIT_FIELDS = COLUMNS.filter((c) => c.kind === "edit").map((c) => c.field);
 
@@ -41,10 +41,11 @@ const GROUPS: { label: string; span: number; calc?: boolean }[] = [
   { label: "自動", span: 1, calc: true },
   { label: "", span: 2 },
 ];
-const GROUP_START = new Set([5, 8, 12, 13, 14]); // 這些欄（含 # 欄的索引）左邊畫分隔線
+const GROUP_START = new Set([5, 8, 12, 13, 14]); // 這些欄（含 # 欄的索引）左邊畫深一點的分隔線
 
 const GRID_ID = "grain";
-const cellLine = (i: number) => (GROUP_START.has(i) ? "border-l border-line-soft" : "");
+// 每一格都有格線（像試算表）；欄位分組的地方用深一點的線
+const cellLine = (i: number) => (GROUP_START.has(i) ? "border border-line-soft border-l-line" : "border border-line-soft");
 
 function calcValue(row: Row, key: CalcKey) {
   return key === "kg" ? row.record.kg : row.calc[key];
@@ -79,47 +80,47 @@ export function GrainGrid({
   const anySplit = rows.some((r) => r.record.planKg !== null || r.record.guideKg !== null);
 
   return (
-    <section aria-label="公糧表" className="overflow-hidden rounded-xl border border-line bg-white">
+    <section aria-label="公糧表" className="overflow-hidden rounded-[4px] border border-line bg-white">
       <div className="overflow-x-auto">
-        <table data-grid={GRID_ID} className="tabular w-full min-w-[1320px] border-collapse whitespace-nowrap text-[15px]">
+        <table data-grid={GRID_ID} className="w-full min-w-[1240px] border-collapse whitespace-nowrap text-[15px]">
           <thead>
-            <tr className="bg-panel text-xs text-muted">
-              <th />
+            <tr className="bg-head text-[13px] text-ink-2">
+              <th className="border border-line-soft" />
               {GROUPS.map((g, i) => (
                 <th
                   key={i}
                   colSpan={g.span}
-                  className={`px-3 pt-1.5 text-left font-medium ${i > 0 ? "border-l border-line-soft" : ""} ${g.calc ? "bg-head" : ""}`}
+                  className={`border border-line-soft px-2 py-1 text-left font-medium ${i > 0 ? "border-l-line" : ""} ${g.calc ? "bg-line-soft" : ""}`}
                 >
                   {g.label}
                 </th>
               ))}
             </tr>
-            <tr className="border-b border-line bg-panel text-sm text-ink-2">
-              <th className="w-9 px-2 pb-2.5 pt-1.5 font-medium text-faint">#</th>
+            <tr className="border-b-2 border-line bg-head text-[15px] text-ink">
+              <th className="w-10 border border-line-soft px-1 py-1.5 text-[13px] font-medium text-muted">#</th>
               {COLUMNS.map((c, i) => {
                 const calc = c.kind === "calc" || (c.kind === "edit" && c.field === "collect");
                 return (
                   <th
                     key={c.label}
-                    className={`px-3 pb-2.5 pt-1.5 align-bottom ${cellLine(i + 1)} ${
+                    className={`px-2 py-1.5 align-bottom ${cellLine(i + 1)} ${
                       (c.kind === "edit" && c.numeric) || c.kind === "calc" ? "text-right" : "text-left"
-                    } ${calc ? "bg-head" : ""} ${
-                      c.kind === "calc" && c.key !== "kg" ? "font-medium text-muted" : "font-bold"
+                    } ${calc ? "bg-line-soft" : ""} ${
+                      c.kind === "calc" && c.key !== "kg" ? "font-medium text-ink-2" : "font-bold"
                     } ${c.kind === "edit" && (c.field === "fileNo" || c.field === "collect") ? "text-brand-700" : ""}`}
                   >
                     {c.label}
-                    {c.sub && <div className="text-[11px] font-normal text-faint">{c.sub}</div>}
+                    {c.sub && <div className="text-[13px] font-normal text-muted">{c.sub}</div>}
                   </th>
                 );
               })}
-              <th className="w-10 border-l border-line-soft" aria-label="刪除" />
+              <th className="w-16 border border-line-soft border-l-line px-1 text-[13px] font-medium text-muted">刪除</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, r) => (
-              <tr key={row.record.id} className="group border-t border-line-soft hover:bg-brand-50/60">
-                <td className="px-2 text-center text-xs text-faint">
+              <tr key={row.record.id} className="hover:bg-brand-50/60">
+                <td className="tabular border border-line-soft bg-panel px-1 text-center text-[13px] text-muted">
                   {row.saving ? <span className="inline-block size-2 animate-pulse rounded-full bg-brand-500" title="儲存中" /> : r + 1}
                 </td>
                 {COLUMNS.map((c, i) => {
@@ -128,7 +129,7 @@ export function GrainGrid({
                     return (
                       <td
                         key={c.key}
-                        className={`bg-calc px-3 text-right ${cellLine(i + 1)} ${c.key === "kg" ? "font-medium text-ink" : "text-muted"}`}
+                        className={`tabular bg-calc px-2 text-right ${cellLine(i + 1)} ${c.key === "kg" ? "font-medium text-ink" : "text-ink-2"}`}
                       >
                         {fmt(v)}
                       </td>
@@ -149,7 +150,7 @@ export function GrainGrid({
                   return (
                     <td
                       key={field}
-                      className={`p-0 ${cellLine(i + 1)} ${field === "collect" ? "bg-brand-50 font-bold text-brand-700" : ""} ${c.className ?? ""}`}
+                      className={`p-0 ${cellLine(i + 1)} ${field === "collect" ? "bg-brand-50 font-bold text-brand-700 [&_input]:placeholder:text-brand-700" : ""} ${c.className ?? ""}`}
                     >
                       <GridCell
                         gridId={GRID_ID}
@@ -174,50 +175,50 @@ export function GrainGrid({
                     </td>
                   );
                 })}
-                <td className="border-l border-line-soft text-center">
+                <td className="border border-line-soft border-l-line px-1 text-center">
                   <button
                     type="button"
                     onClick={() => remove(row.record.id)}
-                    className="rounded px-2 py-1 text-ghost opacity-0 hover:bg-red-50 hover:text-red-700 focus:opacity-100 group-hover:opacity-100"
+                    className="min-h-9 rounded-[4px] px-2 text-[14px] font-medium text-red-700 hover:bg-red-50 hover:underline"
                     aria-label={`刪除第 ${r + 1} 列`}
                   >
-                    ×
+                    刪除
                   </button>
                 </td>
               </tr>
             ))}
-            <tr className="border-t border-line-soft">
-              <td />
-              <td colSpan={COLUMNS.length + 1} className="px-3 py-2.5">
-                <button type="button" onClick={add} className="font-bold text-brand-600 hover:text-brand-700">
+            <tr>
+              <td className="border border-line-soft bg-panel" />
+              <td colSpan={COLUMNS.length + 1} className="border border-line-soft px-2 py-1">
+                <button type="button" onClick={add} className="min-h-10 rounded-[4px] px-2 font-bold text-brand-600 hover:bg-brand-50 hover:text-brand-700">
                   ＋ 新增一筆
                 </button>
-                <span className="ml-3 text-[13px] text-faint">或在最後一列按 Enter</span>
+                <span className="ml-3 text-[14px] text-muted">或在最後一列按 Enter</span>
               </td>
             </tr>
           </tbody>
           {rows.length > 0 && (
             <tfoot>
-              <tr className="border-t-2 border-field bg-head font-bold">
+              <tr className="border-t-2 border-line bg-head font-bold [&>td]:border [&>td]:border-line">
                 <td />
-                <td colSpan={4} className="px-3 py-3">
+                <td colSpan={4} className="px-2 py-2.5">
                   {filtered ? "搜尋結果合計" : "總合計"}
-                  <span className="ml-3 text-[13px] font-normal text-muted">
+                  <span className="tabular ml-3 text-[14px] font-normal text-ink-2">
                     {rows.length} 筆{!filtered && `・${Math.ceil(rows.length / ROWS_PER_PAGE)} 頁`}
                   </span>
                 </td>
                 <td />
                 {[sum((r) => r.record.planKg), sum((r) => r.record.guideKg)].map((v, i) => (
-                  <td key={i} className={`px-3 text-right ${anySplit ? "" : "font-normal text-ghost"}`}>
+                  <td key={i} className={`tabular px-2 text-right ${anySplit ? "" : "font-normal text-muted"}`}>
                     {anySplit ? fmt(v) : "—"}
                   </td>
                 ))}
-                <td className="px-3 text-right">{fmt(sum((r) => r.record.kg))}</td>
-                <td className="px-3 text-right">{fmt(sum((r) => r.calc.interest))}</td>
-                <td className="px-3 text-right">{fmt(sum((r) => r.calc.freight))}</td>
-                <td className="px-3 text-right">{fmt(sum((r) => r.calc.prepaid))}</td>
-                <td className="px-3 text-right">{fmt(sum((r) => r.record.deposit))}</td>
-                <td className="px-3 text-right text-brand-700">
+                <td className="tabular px-2 text-right">{fmt(sum((r) => r.record.kg))}</td>
+                <td className="tabular px-2 text-right">{fmt(sum((r) => r.calc.interest))}</td>
+                <td className="tabular px-2 text-right">{fmt(sum((r) => r.calc.freight))}</td>
+                <td className="tabular px-2 text-right">{fmt(sum((r) => r.calc.prepaid))}</td>
+                <td className="tabular px-2 text-right">{fmt(sum((r) => r.record.deposit))}</td>
+                <td className="tabular px-2 text-right text-brand-700">
                   {fmt(sum((r) => (r.record.deposit === null ? 0 : r.calc.collect)))}
                 </td>
                 <td colSpan={2} />

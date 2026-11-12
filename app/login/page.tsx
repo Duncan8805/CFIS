@@ -10,12 +10,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { next } = await searchParams;
   return (
     <main className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-[4px] border border-line border-t-4 border-t-chrome bg-white p-6">
         <div className="mb-6 flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="" className="size-11 rounded-xl" />
+          <img src="/icons/icon-192.png" alt="" className="size-11 rounded-[4px]" />
           <div>
-            <h1 className="text-lg font-bold">長富整合平台</h1>
-            <p className="text-sm text-muted">請登入</p>
+            <h1 className="text-[20px] font-bold">長富整合平台</h1>
+            <p className="text-[15px] text-muted">請登入</p>
           </div>
         </div>
         <LoginForm next={next ?? ""} />

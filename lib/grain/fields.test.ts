@@ -81,3 +81,20 @@ describe("電話分行", () => {
     expect(splitPhones(null)).toEqual([]);
   });
 });
+
+describe("全形數字（中文輸入法）", () => {
+  it("全形數字、千分位、小數、負號都看得懂", () => {
+    expect(parseField("plan", "１２３４")).toEqual({ ok: true, patch: { planKg: 1234 } });
+    expect(parseField("plan", "１，２３４")).toEqual({ ok: true, patch: { planKg: 1234 } });
+    expect(parseField("fen", "１２．５")).toEqual({ ok: true, patch: { fen: 12.5 } });
+    expect(parseField("deposit", "－３００")).toEqual({ ok: true, patch: { deposit: -300 } });
+    expect(parseField("deposit", "1２,3４5")).toEqual({ ok: true, patch: { deposit: 12345 } });
+    expect(parseField("guide", "　５００　")).toEqual({ ok: true, patch: { guideKg: 500 } });
+  });
+  it("全形檔號", () => {
+    expect(parseField("fileNo", "Ｑ１１１０１４０４")).toEqual({ ok: true, patch: { fileNo: "Q11101404" } });
+  });
+  it("收 填全形數字一樣擋下來", () => {
+    expect(parseField("collect", "１２３").ok).toBe(false);
+  });
+});

@@ -26,7 +26,7 @@ export default async function SettingsPage() {
     return (
       <>
         <PageHeader title="設定" />
-        <p className="rounded-xl border border-line bg-white p-5 text-sm text-muted">
+        <p className="rounded-[4px] border border-line bg-white p-5 text-[15px] text-muted">
           只有管理員可以修改設定。需要調整收購點、計算參數或帳號時，請找管理員。
         </p>
       </>
@@ -65,33 +65,33 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="設定" description="只有管理員看得到這一頁；每次修改都會記在修改紀錄裡" />
-      <nav aria-label="設定項目" className="-mx-4 mb-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-        <ul className="flex w-max gap-1.5 text-sm">
+      <nav aria-label="設定項目" className="mb-4">
+        <ul className="flex flex-wrap gap-1.5 text-[15px]">
           {SECTIONS.map((s) => (
             <li key={s.id}>
-              <a href={`#${s.id}`} className="block rounded-full border border-field bg-white px-3 py-1.5 hover:border-brand-500">
+              <a href={`#${s.id}`} className="flex min-h-11 items-center rounded-[4px] border border-field bg-white px-3.5 text-ink hover:border-brand-600 hover:text-brand-700">
                 {s.label}
               </a>
             </li>
           ))}
           <li>
-            <Link href="/import" className="block rounded-full border border-field bg-white px-3 py-1.5 hover:border-brand-500">
+            <Link href="/import" className="flex min-h-11 items-center rounded-[4px] border border-field bg-white px-3.5 text-ink hover:border-brand-600 hover:text-brand-700">
               匯入 Excel →
             </Link>
           </li>
         </ul>
       </nav>
-      <div className="flex flex-col gap-5">
-        <section id="sites" className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white p-4 md:p-5">
+      <div className="flex flex-col gap-4">
+        <section id="sites" className="flex flex-wrap items-center gap-3 rounded-[4px] border border-line bg-white p-4">
           <div className="min-w-60 flex-1">
-            <h2 className="text-lg font-bold">收購點</h2>
-            <p className="mt-1 text-sm text-muted">
+            <h2 className="text-[16px] font-bold">收購點</h2>
+            <p className="mt-1 text-[15px] text-muted">
               {sites.filter((s) => s.active).length} 個使用中
               {sites.some((s) => !s.active) && `、${sites.filter((s) => !s.active).length} 個停用`}
               。新增、修改週報表名稱、備註規則、捨入方式，或停用、刪除收購點。
             </p>
           </div>
-          <Link href="/settings/sites" className="rounded-[10px] border border-field px-4 py-2.5 font-bold text-brand-700 hover:border-brand-500">
+          <Link href="/settings/sites" className="inline-flex min-h-11 items-center rounded-[4px] border border-field bg-white px-4 text-[15px] font-bold text-brand-700 hover:border-brand-600">
             管理收購點 →
           </Link>
         </section>

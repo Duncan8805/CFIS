@@ -1,6 +1,7 @@
 // 公糧表的欄位定義與輸入解析。前端（即時驗證）與 server action（再驗證一次）共用。
 
 import type { RoundingMode } from "@/lib/calc";
+import { toHalfWidth } from "@/lib/text/halfwidth";
 
 export interface GrainRecordDto {
   id: number;
@@ -67,7 +68,8 @@ export const FILE_NO_PATTERN = /^[A-Z]\d{8}$/;
 export type ParseResult = { ok: true; patch: GrainPatch } | { ok: false; error: string };
 
 function parseNumber(raw: string): number | null | "invalid" {
-  const s = raw.replace(/[,\s]/g, "");
+  // 中文輸入法的全形數字（１，２３４、－３００）先轉半形
+  const s = toHalfWidth(raw).replace(/[,\s]/g, "");
   if (s === "") return null;
   if (!/^-?\d+(\.\d+)?$/.test(s)) return "invalid";
   return Number(s);
@@ -81,7 +83,7 @@ export function parseField(field: EditableField, raw: string): ParseResult {
 
   switch (field) {
     case "fileNo": {
-      const v = text.replace(/\s/g, "").toUpperCase();
+      const v = toHalfWidth(text).replace(/\s/g, "").toUpperCase();
       if (v && !FILE_NO_PATTERN.test(v)) return { ok: false, error: "檔號是 1 個英文字母加 8 位數字，例如 Q11101404" };
       return { ok: true, patch: { fileNo: v || null } };
     }

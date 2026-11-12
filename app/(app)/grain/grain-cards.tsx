@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SAVE_FAILED_MESSAGE } from "@/components/use-record-saver";
+import { DISCARD_CONFIRM, useUnsavedGuard } from "@/components/use-unsaved-guard";
 import { calcGrain } from "@/lib/calc";
 import {
   fieldText,
@@ -35,25 +37,25 @@ export function GrainCards({
 
   return (
     <>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col overflow-hidden rounded-[4px] border border-line bg-white">
         {rows.map((row, i) => (
-          <li key={row.record.id}>
+          <li key={row.record.id} className="border-b border-line-soft last:border-b-0">
             <button
               type="button"
               onClick={() => setEditingId(row.record.id)}
-              className="tabular flex w-full flex-col gap-1 rounded-xl border border-line bg-white p-3 text-left active:bg-brand-50"
+              className="flex w-full flex-col gap-1 p-3 text-left active:bg-brand-50"
             >
               <span className="flex items-baseline gap-2">
-                <span className="text-xs text-faint">{i + 1}</span>
+                <span className="tabular text-[13px] text-muted">{i + 1}</span>
                 <span className="whitespace-nowrap text-lg font-bold">{row.record.name || "（沒有姓名）"}</span>
-                {row.record.fileNo && <span className="text-xs font-medium text-brand-700">{row.record.fileNo}</span>}
+                {row.record.fileNo && <span className="tabular text-[14px] font-medium text-brand-700">{row.record.fileNo}</span>}
                 {row.saving && <span className="size-2 animate-pulse rounded-full bg-brand-500" aria-label="儲存中" />}
                 {row.record.kg !== null && (
-                  <span className="ml-auto whitespace-nowrap text-sm text-muted">{fmt(row.record.kg)} 公斤</span>
+                  <span className="ml-auto whitespace-nowrap text-[15px] text-ink-2"><span className="tabular">{fmt(row.record.kg)}</span> 公斤</span>
                 )}
               </span>
-              <span className="flex items-end gap-3 text-sm text-muted">
-                <span className="min-w-0">
+              <span className="flex items-end gap-3 text-[15px] text-ink-2">
+                <span className="tabular min-w-0">
                   {splitPhones(row.record.phone).map((p, k) => (
                     <span key={k} className="block whitespace-nowrap">
                       {p}
@@ -62,7 +64,7 @@ export function GrainCards({
                 </span>
                 <span className="ml-auto shrink-0">
                   收{" "}
-                  <b className={row.calc.collectText ? "text-warn-700" : "text-brand-700"}>
+                  <b className={`tabular ${row.calc.collectText ? "text-warn-700" : "text-brand-700"}`}>
                     {row.calc.collectText ?? (row.record.deposit === null ? "—" : fmt(row.calc.collect))}
                   </b>
                 </span>
@@ -77,7 +79,7 @@ export function GrainCards({
           const created = await add();
           if (created) setEditingId(created.id);
         }}
-        className="mt-3 w-full rounded-xl border border-dashed border-brand-500 py-3 font-bold text-brand-700"
+        className="mt-3 min-h-12 w-full rounded-[4px] border border-dashed border-brand-600 bg-white text-[17px] font-bold text-brand-700"
       >
         ＋ 新增一筆
       </button>
@@ -101,7 +103,7 @@ export function GrainCards({
 const FIELDS: EditableField[] = ["fileNo", "name", "phone", "plan", "guide", "fen", "deposit", "collect", "code", "address"];
 
 const inputBase =
-  "tabular w-full rounded-[10px] border border-field bg-white px-3 text-ink focus:border-brand-600 focus:outline-none";
+  "tabular w-full rounded-[4px] border border-field bg-white px-3 text-ink placeholder:text-ghost focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/30";
 
 function EditSheet({
   row,
@@ -123,12 +125,21 @@ function EditSheet({
   const [draft, setDraft] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // 改過還沒存、或正在存：不能一碰背景就關掉
+  const dirty = busy || FIELDS.some((f) => draft[f] !== initial[f]);
+  useUnsavedGuard(dirty);
+  /** 取消／Esc：有改過要先問 */
+  const requestClose = () => {
+    if (!dirty || confirm(DISCARD_CONFIRM)) onClose();
+  };
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && requestCloseRef.current();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, []);
 
   // 邊打邊算：把草稿套到這一筆上，打錯的欄位先當作沒改
   const live = { ...row.record };
@@ -145,14 +156,22 @@ function EditSheet({
     );
     if (!changed.length) return onClose();
     setBusy(true);
-    const err = await save(row.record.id, changed);
-    setBusy(false);
+    setError(null);
+    let err: string | null;
+    try {
+      err = await save(row.record.id, changed);
+    } catch {
+      err = SAVE_FAILED_MESSAGE;
+    } finally {
+      setBusy(false);
+    }
+    // 沒存到：視窗留著、打的字都還在，可以再按一次儲存
     if (err) setError(err);
     else onClose();
   };
 
   const field = (f: EditableField, label: string, opts: { mode?: "numeric" | "decimal" | "tel"; list?: string; big?: boolean; strong?: boolean; placeholder?: string } = {}) => (
-    <label className={`flex flex-col gap-1 text-[13px] ${opts.strong ? "font-bold text-brand-700" : "text-muted"}`}>
+    <label className={`flex flex-col gap-1 text-[15px] ${opts.strong ? "font-bold text-brand-700" : "text-ink-2"}`}>
       {label}
       <input
         value={draft[f]}
@@ -167,21 +186,21 @@ function EditSheet({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black/40" role="dialog" aria-modal="true" aria-label="編輯公糧">
-      <button type="button" className="min-h-10 flex-1" onClick={onClose} aria-label="關閉" />
+      <button type="button" className="min-h-10 flex-1" onClick={() => !dirty && onClose()} aria-label="關閉" />
       <form
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
-        className="pb-safe flex max-h-[92dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[20px] bg-white px-4 pb-5 pt-2.5"
+        className="pb-safe flex max-h-[92dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[4px] border-t border-line bg-white px-4 pb-5 pt-2.5"
       >
-        <div className="h-[5px] w-10 self-center rounded-full bg-field" />
+        <div className="h-[5px] w-10 self-center rounded-[4px] bg-field" />
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-muted">{row.record.name ? "編輯・照核定通知單輸入" : "新增一筆・照核定通知單輸入"}</div>
+            <div className="text-[14px] text-muted">{row.record.name ? "編輯・照核定通知單輸入" : "新增一筆・照核定通知單輸入"}</div>
             <h2 className="truncate text-[22px] font-bold">{draft.name || "（還沒有姓名）"}</h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-[10px] px-3 py-2 text-muted">
+          <button type="button" onClick={requestClose} className="min-h-12 rounded-[4px] border border-field px-4 text-[17px] text-ink">
             取消
           </button>
         </div>
@@ -194,9 +213,9 @@ function EditSheet({
         <div className="grid grid-cols-2 gap-2.5">
           {field("plan", "計畫收購", { mode: "numeric", big: true })}
           {field("guide", "輔導收購", { mode: "numeric", big: true })}
-          <div className="flex flex-col gap-1 text-[13px] text-muted">
+          <div className="flex flex-col gap-1 text-[15px] text-ink-2">
             公斤（自動）
-            <div className="tabular flex h-[52px] items-center justify-end rounded-[10px] bg-brand-100 px-3 text-xl font-bold text-brand-700">
+            <div className="tabular flex h-[52px] items-center justify-end rounded-[4px] border border-line bg-calc px-3 text-xl font-bold text-ink">
               {fmt(live.kg) || "—"}
             </div>
           </div>
@@ -205,43 +224,47 @@ function EditSheet({
           {field("collect", "收（要填「扣」才改）", { big: true, placeholder: "自動" })}
         </div>
 
-        <section aria-label="即時計算" className="tabular flex flex-col gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-3">
-          <div className="flex justify-between text-sm text-ink-2">
+        <section aria-label="即時計算" className="tabular flex flex-col gap-2 rounded-[4px] border border-line bg-calc px-3.5 py-3">
+          <div className="flex justify-between text-[15px] text-ink-2">
             <span>
               利 {fmt(c.interest)} − 運費 {fmt(c.freight)}
             </span>
             <span>先付 {fmt(c.prepaid)}</span>
           </div>
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm text-ink-2">
+            <span className="text-[15px] text-ink-2">
               {live.planKg !== null || live.guideKg !== null
                 ? `公斤 ${fmt(live.planKg ?? 0)} ＋ ${fmt(live.guideKg ?? 0)} ＝ ${fmt(live.kg)}`
                 : `公斤 ${fmt(live.kg) || "—"}`}
             </span>
-            <span className={`shrink-0 whitespace-nowrap text-base font-bold ${c.collectText ? "text-warn-700" : live.deposit === null ? "text-muted" : "text-brand-700"}`}>
+            <span className={`shrink-0 whitespace-nowrap text-[17px] font-bold ${c.collectText ? "text-warn-700" : live.deposit === null ? "text-muted" : "text-brand-700"}`}>
               {c.collectText ? `收：${c.collectText}` : live.deposit === null ? "收：填入簿後計算" : `收 ${fmt(c.collect)}`}
             </span>
           </div>
-          <div className="text-xs text-muted">邊打邊算，跟 Excel 同一套公式</div>
+          <div className="font-sans text-[14px] text-muted">邊打邊算，跟 Excel 同一套公式</div>
         </section>
 
-        <details className="text-sm text-muted" open={!!(initial.code || initial.address)}>
-          <summary className="py-1.5">編號、地址</summary>
+        <details className="text-[15px] text-ink-2" open={!!(initial.code || initial.address)}>
+          <summary className="flex min-h-11 cursor-pointer items-center">編號、地址</summary>
           <div className="mt-2 grid gap-2.5">
             {field("code", "編號")}
             {field("address", "地址")}
           </div>
         </details>
 
-        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p role="alert" className="rounded-[4px] border border-red-700 bg-red-50 px-3 py-2 text-[16px] text-red-800">
+            {error}
+          </p>
+        )}
         <div className="flex gap-2.5">
-          <button type="button" onClick={onDelete} className="h-[52px] rounded-xl border border-red-200 px-4 text-red-700">
+          <button type="button" onClick={onDelete} className="h-[52px] rounded-[4px] border border-red-300 bg-white px-4 text-[17px] font-medium text-red-700">
             刪除
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="h-[52px] flex-1 rounded-xl bg-brand-600 text-[17px] font-bold text-white disabled:opacity-50"
+            className="h-[52px] flex-1 rounded-[4px] bg-brand-600 text-[17px] font-bold text-white disabled:opacity-50"
           >
             {busy ? "儲存中…" : "儲存"}
           </button>

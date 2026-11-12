@@ -22,9 +22,12 @@ import {
   type GrainPatch,
   type GrainRecordDto,
 } from "@/lib/grain/fields";
+import { FailedCellsContext, useFailedCellCount } from "@/components/failed-cells";
 import { buttonClass, PageHeader } from "@/components/page-header";
+import { SaveStatus } from "@/components/save-status";
 import { Toast, useToast } from "@/components/toast";
 import { useRecordSaver } from "@/components/use-record-saver";
+import { useUnsavedGuard } from "@/components/use-unsaved-guard";
 import { GrainCards } from "./grain-cards";
 import { GrainGrid } from "./grain-grid";
 
@@ -53,11 +56,14 @@ export const fmt = (n: number | null) =>
 
 export function GrainSheet({
   site,
+  context,
   settings,
   initialRecords,
   farmers,
 }: {
   site: SheetSite;
+  /** 標題下面的「115 年第 2 期・收購點：朴子」 */
+  context?: string;
   /** 這一期的計算參數（每分利、每公斤運費、每公頃計畫／輔導收購量） */
   settings: CalcSettings;
   initialRecords: GrainRecordDto[];
@@ -65,7 +71,7 @@ export function GrainSheet({
   farmers: FarmerDto[];
 }) {
   const router = useRouter();
-  const { message: toast, tone, show: showToast } = useToast();
+  const { message: toast, tone, show: showToast, dismiss: dismissToast } = useToast();
   const [focusId, setFocusId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const {
@@ -80,6 +86,10 @@ export function GrainSheet({
     send: updateGrainRecord,
     onError: showToast,
   });
+  // 還在存的時候關分頁，先提醒（沒存到的格子由格子自己提醒）
+  useUnsavedGuard(saving.size > 0);
+  // 表格上方「有 N 格沒存到」用（只是計數，存檔照舊由格子處理）
+  const failedCells = useFailedCellCount();
 
   const byFileNo = useMemo(
     () => new Map(farmers.filter((f) => f.fileNo).map((f) => [f.fileNo!, f])),
@@ -161,7 +171,7 @@ export function GrainSheet({
   );
 
   const add = useCallback(async () => {
-    const result = await createGrainRecord(site.id);
+    const result = await createGrainRecord(site.id).catch(() => ({ ok: false as const, error: "沒新增成功：網路可能斷了，請再按一次新增" }));
     if (!result.ok) {
       showToast(result.error);
       return null;
@@ -185,7 +195,7 @@ export function GrainSheet({
       )
         return false;
       setRecords((rs) => rs.filter((r) => r.id !== id));
-      const result = await deleteGrainRecord(id);
+      const result = await deleteGrainRecord(id).catch(() => ({ ok: false as const, error: "沒刪掉：網路可能斷了，請再試一次" }));
       if (!result.ok) {
         setRecords((rs) => [...rs, current].sort((a, b) => a.seq - b.seq));
         showToast(result.error);
@@ -245,6 +255,7 @@ export function GrainSheet({
       <PageHeader
         eyebrow="公糧"
         title={site.name}
+        context={context}
         description={
           site.roundingMode === "none"
             ? "這個收購點的利、運費不捨去（保留小數）"
@@ -252,7 +263,7 @@ export function GrainSheet({
         }
         actions={
           <>
-            <label className="flex h-[42px] min-w-0 items-center gap-2 rounded-[10px] border border-field bg-white px-3 text-muted focus-within:border-brand-500 sm:min-w-56">
+            <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-[4px] border border-field bg-white px-3 text-muted focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/30 sm:min-w-64">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -270,7 +281,7 @@ export function GrainSheet({
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="找姓名、電話或檔號"
                 placeholder="找姓名、電話或檔號"
-                className="min-w-0 flex-1 bg-transparent text-ink outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ghost"
               />
             </label>
             <button
@@ -286,16 +297,16 @@ export function GrainSheet({
 
       <section
         aria-label="合計"
-        className="tabular mb-4 grid grid-cols-3 overflow-hidden rounded-xl border border-line bg-white xl:grid-cols-6"
+        className="mb-3 grid grid-cols-3 gap-px overflow-hidden rounded-[4px] border border-line bg-line-soft xl:grid-cols-6"
       >
         {totals.map((t) => (
           <div
             key={t.label}
-            className="border-l border-line-soft px-3 py-2.5 first:border-l-0 md:px-4 md:py-3"
+            className="bg-white px-3 py-2 md:px-4"
           >
-            <div className="text-xs text-muted">{t.label}</div>
+            <div className="text-[13px] text-muted">{t.label}</div>
             <div
-              className={`truncate text-base font-bold md:text-xl ${t.brand ? "text-brand-700" : t.muted ? "text-muted" : "text-ink"}`}
+              className={`tabular truncate text-[17px] font-semibold md:text-xl ${t.brand ? "text-brand-700" : t.muted ? "text-ink-2" : "text-ink"}`}
             >
               {t.value}
             </div>
@@ -316,52 +327,54 @@ export function GrainSheet({
         ))}
       </datalist>
 
-      <div className="hidden md:block">
-        <GrainGrid
-          rows={shown}
-          filtered={!!q}
-          save={save}
-          add={add}
-          remove={remove}
-          focusId={focusId}
-          onFocused={() => setFocusId(null)}
-        />
-        <footer className="mt-3 flex flex-wrap items-center gap-4 text-[13px] text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              className={`size-2 rounded-full ${saving.size ? "animate-pulse bg-warn-500" : "bg-brand-600"}`}
-            />
-            {saving.size ? "儲存中…" : "全部已儲存"}
-          </span>
-          <span>方向鍵移動・Enter 往下・Esc 取消・離開格子自動儲存</span>
-          <span>
-            公斤＝計畫＋輔導；從舊 Excel
-            匯入的資料只有公斤，補上兩欄後公斤會改成自動加總
-          </span>
-        </footer>
-      </div>
-      <div className="md:hidden">
-        <GrainCards
-          rows={shown}
-          save={save}
-          add={add}
-          remove={remove}
-          preview={(r) =>
-            calcGrain(
-              {
-                kg: r.kg,
-                fen: r.fen,
-                deposit: r.deposit,
-                collectOverride: r.collectOverride,
-              },
-              settings.rates,
-              effectiveRoundingMode(r.roundingMode, site.roundingMode),
-            )
-          }
-        />
-      </div>
+      <SaveStatus
+        saving={saving.size > 0}
+        failed={failedCells.count}
+        hint="方向鍵移動・Enter 往下・Esc 取消・離開格子自動儲存"
+      />
 
-      <Toast message={toast} tone={tone} />
+      <FailedCellsContext.Provider value={failedCells.report}>
+        <div className="hidden md:block">
+          <GrainGrid
+            rows={shown}
+            filtered={!!q}
+            save={save}
+            add={add}
+            remove={remove}
+            focusId={focusId}
+            onFocused={() => setFocusId(null)}
+          />
+          <footer className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-muted">
+            <span>紅框是沒存到的格子：改好後按 Enter 再存一次，或按 Esc 恢復原本的值</span>
+            <span>
+              公斤＝計畫＋輔導；從舊 Excel
+              匯入的資料只有公斤，補上兩欄後公斤會改成自動加總
+            </span>
+          </footer>
+        </div>
+        <div className="md:hidden">
+          <GrainCards
+            rows={shown}
+            save={save}
+            add={add}
+            remove={remove}
+            preview={(r) =>
+              calcGrain(
+                {
+                  kg: r.kg,
+                  fen: r.fen,
+                  deposit: r.deposit,
+                  collectOverride: r.collectOverride,
+                },
+                settings.rates,
+                effectiveRoundingMode(r.roundingMode, site.roundingMode),
+              )
+            }
+          />
+        </div>
+      </FailedCellsContext.Provider>
+
+      <Toast message={toast} tone={tone} onClose={dismissToast} />
     </>
   );
 }

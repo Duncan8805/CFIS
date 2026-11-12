@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { buttonClass } from "@/components/page-header";
 import { money, ReceiptSlip, type ReceiptAccount, type ReceiptData } from "./receipt-slip";
 
 const PER_PAGE = 6;
@@ -53,79 +54,84 @@ export function ReceiptsClient({
 
   return (
     <>
-      <section className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 text-sm print:hidden">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <section className="mb-4 flex flex-col overflow-hidden rounded-[4px] border border-line bg-white text-[15px] print:hidden">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-line bg-head px-3.5 py-1.5">
           <span className="font-bold">{siteName}</span>
-          <label className="flex items-center gap-2">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={skipZero}
               onChange={(e) => setSkipZero(e.target.checked)}
-              className="size-4 accent-brand-600"
+              className="size-[22px] shrink-0 accent-brand-600"
             />
             略過金額為 0 的
           </label>
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 border-line sm:border-l sm:pl-4">
-            <span className="text-muted">帳號：</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-0 border-line sm:border-l sm:pl-4">
+            <span className="text-ink-2">帳號：</span>
             {accounts.map((a) => (
-              <label key={a.id} className="flex items-center gap-2">
+              <label key={a.id} className="flex min-h-11 cursor-pointer items-center gap-2.5">
                 <input
                   type="checkbox"
                   checked={accountIds.has(a.id)}
                   onChange={() => setAccountIds((s) => toggle(s, a.id))}
-                  className="size-4 accent-brand-600"
+                  className="size-[22px] shrink-0 accent-brand-600"
                 />
                 {a.org}
               </label>
             ))}
-            {accounts.length === 0 && <span className="text-warn-700">還沒有設定農會帳號</span>}
+            {accounts.length === 0 && <span className="font-bold text-warn-700">還沒有設定農會帳號</span>}
           </span>
           <button
             type="button"
             onClick={() => window.print()}
             disabled={!selected.length}
-            className="ml-auto rounded-lg bg-brand-600 px-5 py-2 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+            className={`${buttonClass.primary} ml-auto px-6`}
           >
             列印
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-muted">
-          <span className="tabular">
-            要印 {selected.length} 張，共 {pages.length} 頁 A4
+        <div className="flex flex-wrap items-center gap-3 px-3.5 py-1.5 text-ink-2">
+          <span>
+            要印 <span className="tabular">{selected.length}</span> 張，共 <span className="tabular">{pages.length}</span> 頁 A4
             {candidates.length < receipts.length && `（略過 ${receipts.length - candidates.length} 筆金額為 0）`}
           </span>
-          <button type="button" onClick={() => setListOpen((v) => !v)} className="text-brand-700 underline-offset-2 hover:underline">
+          <button
+            type="button"
+            onClick={() => setListOpen((v) => !v)}
+            aria-expanded={listOpen}
+            className="min-h-11 rounded-[4px] px-2 font-bold text-brand-700 underline underline-offset-4 hover:bg-brand-50"
+          >
             {listOpen ? "收起名單" : "選擇要印的農民"}
           </button>
         </div>
 
         {listOpen && (
-          <div>
-            <div className="mb-2 flex gap-3">
-              <button type="button" onClick={() => setExcluded(new Set())} className="rounded-md border border-field px-2 py-1">
+          <div className="border-t border-line-soft px-3.5 py-3">
+            <div className="mb-2 flex gap-2">
+              <button type="button" onClick={() => setExcluded(new Set())} className={buttonClass.secondary}>
                 全選
               </button>
               <button
                 type="button"
                 onClick={() => setExcluded(new Set(candidates.map((r) => r.id)))}
-                className="rounded-md border border-field px-2 py-1"
+                className={buttonClass.secondary}
               >
                 全不選
               </button>
             </div>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3 lg:grid-cols-5">
+            <ul className="grid grid-cols-1 gap-x-4 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {candidates.map((r) => (
                 <li key={r.id}>
-                  <label className="flex items-center gap-2">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-2.5 border-b border-line-soft">
                     <input
                       type="checkbox"
                       checked={!excluded.has(r.id)}
                       onChange={() => setExcluded((s) => toggle(s, r.id))}
-                      className="size-4 accent-brand-600"
+                      className="size-[22px] shrink-0 accent-brand-600"
                     />
                     <span className="truncate">{r.name}</span>
-                    <span className="tabular ml-auto text-xs text-faint">{r.collectText ?? money(r.collect)}</span>
+                    <span className="tabular ml-auto text-[14px] text-muted">{r.collectText ?? money(r.collect)}</span>
                   </label>
                 </li>
               ))}
@@ -135,7 +141,7 @@ export function ReceiptsClient({
       </section>
 
       {selected.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-field bg-white p-6 text-center text-sm text-muted print:hidden">
+        <p className="rounded-[4px] border border-dashed border-field bg-white p-6 text-center text-[15px] text-muted print:hidden">
           {receipts.length === 0 ? "這個收購點還沒有公糧資料。" : "沒有要印的收款單。"}
         </p>
       ) : (

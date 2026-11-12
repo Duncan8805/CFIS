@@ -1,5 +1,7 @@
 // 週報表的欄位、日期格式與輸入解析。前端與 server action 共用。
 
+import { toHalfWidth } from "@/lib/text/halfwidth";
+
 export interface WeeklyRowDto {
   entryId: number;
   grainId: number;
@@ -47,7 +49,8 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * 沒寫年份時用期別的西元年。
  */
 export function parseDate(text: string, defaultYear: number): string | null | "invalid" {
-  const s = text.trim().replace(/日$/, "");
+  // 中文輸入法的全形數字、斜線（１１／１２）先轉半形
+  const s = toHalfWidth(text).trim().replace(/日$/, "");
   if (!s) return null;
   let y = defaultYear;
   let m: number;
@@ -93,9 +96,10 @@ export function parseWeeklyField(field: WeeklyField, raw: string, defaults: Week
       return { ok: true, patch: { [field]: v } };
     }
     case "moisture": {
-      if (!text) return { ok: true, patch: { moisture: null } };
-      if (!/^\d{1,3}$/.test(text) || Number(text) > 100) return { ok: false, error: "水分要填 0–100 的整數" };
-      return { ok: true, patch: { moisture: Number(text) } };
+      const n = toHalfWidth(text).trim();
+      if (!n) return { ok: true, patch: { moisture: null } };
+      if (!/^\d{1,3}$/.test(n) || Number(n) > 100) return { ok: false, error: "水分要填 0–100 的整數" };
+      return { ok: true, patch: { moisture: Number(n) } };
     }
     case "sellTo":
       if (text.length > 32) return { ok: false, error: "繳售業者最多 32 個字" };

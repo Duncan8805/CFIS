@@ -76,7 +76,7 @@ function CalcForm({ settings }: { settings: CalcSettings }) {
         <Field label="每公頃計畫收購（公斤）">{numberInput("planKgPerHa", "numeric", "例：2500")}</Field>
         <Field label="每公頃輔導收購（公斤）">{numberInput("guideKgPerHa", "numeric", "例：1900")}</Field>
       </div>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-[15px] text-muted">
         每公頃的數量照農會核定通知單填（例如第 2 期：計畫 2,500、輔導 1,900）。填了之後，輸入公糧時打核定面積（分），系統會先算出建議的計畫、輔導數量，再對照單子修改；空白就不建議。
       </p>
       <div className="mt-3">
@@ -93,7 +93,7 @@ function VendorForm({ vendorName }: { vendorName: string }) {
   return (
     <div className="border-t border-line-soft pt-5">
       <h3 className="font-bold">週報表上的繳交業者</h3>
-      <p className="mt-1 text-sm text-muted">所有期別共用。</p>
+      <p className="mt-1 text-[15px] text-muted">所有期別共用。</p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <div className="w-60">
           <input className={inputClass} value={value} aria-label="繳交業者" onChange={(e) => setValue(e.target.value)} />
@@ -141,14 +141,14 @@ function MoistureTable({ rows }: { rows: { moisture: number; rate: number }[] })
   return (
     <div>
       <h3 className="font-bold">水分折算率</h3>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-[15px] text-muted">
         濕稻穀數量 = 公斤 ÷ 折算率。水分低於最小那一列時折算率為 0（週報表濕穀數量留白）；水分介於兩列之間時用較小那一列。
       </p>
-      <table className="tabular mt-3 w-full max-w-sm text-sm">
+      <table className="tabular mt-3 w-full max-w-sm text-[15px]">
         <thead>
-          <tr className="text-muted">
-            <th className="pb-1 text-left font-normal">水分（%）</th>
-            <th className="pb-1 text-left font-normal">折算率</th>
+          <tr className="text-ink-2">
+            <th className="pb-1 text-left font-sans font-medium">水分（%）</th>
+            <th className="pb-1 text-left font-sans font-medium">折算率</th>
             <th />
           </tr>
         </thead>
@@ -178,9 +178,9 @@ function MoistureTable({ rows }: { rows: { moisture: number; rate: number }[] })
                   type="button"
                   onClick={() => setForm((f) => f.filter((_, j) => j !== i))}
                   aria-label={`刪除第 ${i + 1} 列`}
-                  className="rounded px-2 py-1 text-ghost hover:bg-red-50 hover:text-red-700"
+                  className="min-h-11 rounded-[4px] px-2 font-sans text-[15px] text-red-700 hover:bg-red-50 hover:underline"
                 >
-                  ×
+                  刪除
                 </button>
               </td>
             </tr>
@@ -191,7 +191,7 @@ function MoistureTable({ rows }: { rows: { moisture: number; rate: number }[] })
         <button
           type="button"
           onClick={() => setForm((f) => [...f, { moisture: "", rate: "" }])}
-          className="rounded-lg border border-field px-3 py-2 text-sm"
+          className="min-h-11 rounded-[4px] border border-field bg-white px-4 text-[15px] text-ink hover:border-brand-600"
         >
           ＋ 加一列
         </button>

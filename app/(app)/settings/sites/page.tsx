@@ -30,8 +30,8 @@ export default async function SitesPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <div className="mb-1 text-[13px] text-muted">
-        <Link href="/settings" className="text-brand-600 hover:underline">
+      <div className="mb-1 text-[15px] text-muted">
+        <Link href="/settings" className="inline-flex min-h-11 items-center text-brand-600 underline-offset-4 hover:underline">
           設定
         </Link>{" "}
         ／ 收購點

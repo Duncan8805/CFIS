@@ -10,8 +10,12 @@ import {
   type WeeklyPatch,
   type WeeklyRowDto,
 } from "@/lib/weekly/fields";
+import { FailedCellsContext, useFailedCellCount } from "@/components/failed-cells";
+import { buttonClass } from "@/components/page-header";
+import { SaveStatus } from "@/components/save-status";
 import { Toast, useToast } from "@/components/toast";
 import { useRecordSaver } from "@/components/use-record-saver";
+import { useUnsavedGuard } from "@/components/use-unsaved-guard";
 import { WeeklyCards } from "./weekly-cards";
 import { WeeklyGrid } from "./weekly-grid";
 import { WeeklyPrint } from "./weekly-print";
@@ -53,13 +57,18 @@ export function WeeklySheet({
   moistureRates: MoistureRate[];
   initialRows: WeeklyRowDto[];
 }) {
-  const { message: error, show: showError } = useToast();
+  const { message: error, show: showError, dismiss: dismissError } = useToast();
   const { rows, setRows, rowsRef, saving, apply } = useRecordSaver<WeeklyRowDto, WeeklyPatch>({
     initial: initialRows,
     idOf: entryId,
     send: updateWeeklyEntry,
     onError: showError,
   });
+  // 還在存的時候關分頁，先提醒（沒存到的格子由格子自己提醒）
+  const [fillingRandom, setFillingRandom] = useState(false);
+  useUnsavedGuard(saving.size > 0 || fillingRandom);
+  // 表格上方「有 N 格沒存到」用（只是計數，存檔照舊由格子處理）
+  const failedCells = useFailedCellCount();
   // 列印模式：跟 Excel 巨集一樣隱藏「公斤」與「濕稻穀折算」
   const [printMode, setPrintMode] = useState(false);
   const [randomOpen, setRandomOpen] = useState(false);
@@ -112,10 +121,15 @@ export function WeeklySheet({
     const before = rowsRef.current;
     const byId = new Map(items.map((i) => [i.entryId, i.moisture]));
     setRows((rs) => rs.map((r) => (byId.has(r.entryId) ? { ...r, moisture: byId.get(r.entryId)! } : r)));
-    const result = await setMoistures(items);
-    if (!result.ok) {
-      setRows(before);
-      showError(result.error);
+    setFillingRandom(true);
+    try {
+      const result = await setMoistures(items).catch(() => ({ ok: false as const, error: "水分沒存到：網路可能斷了，請再按一次隨機產生" }));
+      if (!result.ok) {
+        setRows(before);
+        showError(result.error);
+      }
+    } finally {
+      setFillingRandom(false);
     }
   }
 
@@ -125,28 +139,28 @@ export function WeeklySheet({
   return (
     <>
       <div className="print:hidden">
-        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-          <span className="tabular">{rows.length} 筆</span>
-          <span className="tabular">{fmt(totalKg)} 公斤</span>
-          <span className="tabular">濕穀 {fmt(totalWet)}</span>
-          {emptyMoisture.length > 0 && <span className="text-warn-700">{emptyMoisture.length} 筆還沒有水分</span>}
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-ink-2">
+          <span><span className="tabular">{rows.length}</span> 筆</span>
+          <span><span className="tabular">{fmt(totalKg)}</span> 公斤</span>
+          <span>濕穀 <span className="tabular">{fmt(totalWet)}</span></span>
+          {emptyMoisture.length > 0 && <span className="font-bold text-warn-700">{emptyMoisture.length} 筆還沒有水分</span>}
           <div className="ml-auto flex flex-wrap gap-2">
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setRandomOpen((v) => !v)}
                 disabled={!rows.length}
-                className="rounded-lg border border-field bg-white px-3 py-2 text-black hover:border-brand-500 disabled:opacity-40"
+                className={buttonClass.secondary}
               >
                 隨機產生水分
               </button>
               {randomOpen && (
-                <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-line bg-white p-2 text-black shadow-lg">
+                <div className="absolute right-0 z-20 mt-1 w-72 rounded-[4px] border border-field bg-white p-1 text-ink shadow-[0_4px_12px_rgba(30,38,51,0.18)]">
                   <button
                     type="button"
                     onClick={() => fillRandom(emptyMoisture)}
                     disabled={!emptyMoisture.length}
-                    className="block w-full rounded-lg px-3 py-2 text-left hover:bg-brand-50 disabled:opacity-40"
+                    className="block min-h-11 w-full rounded-[4px] px-3 text-left text-[15px] hover:bg-brand-50 disabled:opacity-40"
                   >
                     只填還沒有水分的（{emptyMoisture.length} 筆）
                   </button>
@@ -155,11 +169,11 @@ export function WeeklySheet({
                     onClick={() => {
                       if (confirm(`全部 ${rows.length} 筆的水分都會重新產生，原本的水分會被取代。確定嗎？`)) fillRandom(rows);
                     }}
-                    className="block w-full rounded-lg px-3 py-2 text-left hover:bg-brand-50"
+                    className="block min-h-11 w-full rounded-[4px] px-3 text-left text-[15px] hover:bg-brand-50"
                   >
                     全部重新產生（{rows.length} 筆）
                   </button>
-                  <p className="px-3 pb-1 pt-2 text-xs text-muted">
+                  <p className="border-t border-line-soft px-3 pb-1 pt-2 text-[14px] text-muted">
                     24–30，以 26、27 最多；2 筆以上保證至少一個 30（跟原本的巨集一樣）
                   </p>
                 </div>
@@ -169,8 +183,8 @@ export function WeeklySheet({
               type="button"
               onClick={() => setPrintMode((v) => !v)}
               aria-pressed={printMode}
-              className={`hidden rounded-lg border px-3 py-2 md:block ${
-                printMode ? "border-brand-600 bg-brand-50 font-bold text-brand-700" : "border-field bg-white text-black"
+              className={`hidden min-h-11 rounded-[4px] border px-4 text-[15px] md:block ${
+                printMode ? "border-brand-600 bg-brand-50 font-bold text-brand-700" : "border-field bg-white text-ink"
               }`}
             >
               {printMode ? "目前：列印模式" : "目前：編輯模式"}
@@ -179,7 +193,7 @@ export function WeeklySheet({
               type="button"
               onClick={() => window.print()}
               disabled={!rows.length}
-              className="rounded-lg bg-brand-600 px-4 py-2 font-bold text-white hover:bg-brand-700 disabled:opacity-40"
+              className={buttonClass.primary}
             >
               列印
             </button>
@@ -187,23 +201,28 @@ export function WeeklySheet({
         </div>
 
         {rows.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-field bg-white p-6 text-center text-sm text-muted">
+          <p className="rounded-[4px] border border-dashed border-field bg-white p-6 text-center text-[15px] text-muted">
             這個收購點還沒有資料。到「公糧」新增，或從「設定 → 匯入 Excel」匯入，週報表就會出現。
           </p>
         ) : (
-          <>
+          <FailedCellsContext.Provider value={failedCells.report}>
+            <SaveStatus
+              saving={saving.size > 0 || fillingRandom}
+              failed={failedCells.count}
+              hint="方向鍵移動・Enter 往下・離開格子自動儲存"
+            />
             <div className="hidden md:block">
               <WeeklyGrid rows={wrows} save={save} printMode={printMode} />
             </div>
             <div className="md:hidden">
               <WeeklyCards rows={wrows} save={save} />
             </div>
-          </>
+          </FailedCellsContext.Provider>
         )}
       </div>
 
       <WeeklyPrint rows={wrows} period={period} vendor={vendor} />
-      <Toast message={error} />
+      <Toast message={error} onClose={dismissError} />
     </>
   );
 }

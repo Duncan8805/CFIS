@@ -44,7 +44,7 @@ function UserForm({ initial, isSelf }: { initial: UserRow; isSelf: boolean }) {
     });
 
   return (
-    <div className={`rounded-lg border border-line p-3 ${form.active ? "" : "bg-panel"}`}>
+    <div className={`rounded-[4px] border border-line p-3 ${form.active ? "" : "bg-panel"}`}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="帳號">
           <input className={inputClass} value={form.username} disabled />
@@ -65,18 +65,18 @@ function UserForm({ initial, isSelf }: { initial: UserRow; isSelf: boolean }) {
         </Field>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
           <input
             type="checkbox"
             checked={form.active}
             disabled={isSelf}
             onChange={(e) => setForm({ ...form, active: e.target.checked })}
-            className="size-4 accent-brand-600"
+            className="size-[22px] shrink-0 accent-brand-600"
           />
           可以登入
         </label>
-        {isSelf && <span className="text-sm text-faint">（這是你自己的帳號）</span>}
-        <button type="button" onClick={() => setResetting((v) => !v)} className="text-sm text-brand-700">
+        {isSelf && <span className="text-[15px] text-muted">（這是你自己的帳號）</span>}
+        <button type="button" onClick={() => setResetting((v) => !v)} className="min-h-11 rounded-[4px] px-2 text-[15px] font-bold text-brand-700 underline underline-offset-4 hover:bg-brand-50">
           {resetting ? "取消重設密碼" : "重設密碼"}
         </button>
         <div className="ml-auto">
@@ -101,7 +101,7 @@ function ResetPassword({ userId, onDone }: { userId: number; onDone: () => void 
       return null;
     });
   return (
-    <div className="mt-3 grid grid-cols-1 items-end gap-3 rounded-lg bg-brand-50 p-3 sm:grid-cols-3">
+    <div className="mt-3 grid grid-cols-1 items-end gap-3 rounded-[4px] border border-brand-200 bg-brand-50 p-3 sm:grid-cols-3">
       <Field label="新密碼（至少 8 個字元）">
         <input type="password" autoComplete="new-password" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
@@ -136,14 +136,14 @@ function NewUserForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 rounded-lg border border-dashed border-brand-500 px-4 py-2 text-sm font-bold text-brand-700"
+        className="mt-3 min-h-11 rounded-[4px] border border-dashed border-brand-600 bg-white px-4 text-[15px] font-bold text-brand-700"
       >
         ＋ 新增使用者
       </button>
     );
   }
   return (
-    <div className="mt-3 rounded-lg border border-brand-500 p-3">
+    <div className="mt-3 rounded-[4px] border border-brand-600 p-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="帳號（登入用，英文或數字）">
           <input className={inputClass} autoCapitalize="none" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
@@ -165,7 +165,7 @@ function NewUserForm() {
         </Field>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted">
+        <button type="button" onClick={() => setOpen(false)} className="min-h-11 rounded-[4px] border border-field bg-white px-4 text-[15px] text-ink">
           取消
         </button>
         <SaveButton status={status} dirty={!!form.username && !!form.password} onClick={save} label="新增" />

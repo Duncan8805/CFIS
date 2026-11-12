@@ -7,7 +7,7 @@ export default function OfflinePage() {
   return (
     <div className="mx-auto max-w-md py-16 text-center">
       <h1 className="text-xl font-bold">目前沒有網路</h1>
-      <p className="mt-2 text-sm text-black/60">這一頁還沒有存在這台裝置上。恢復連線後再試一次。</p>
+      <p className="mt-2 text-[15px] text-muted">這一頁還沒有存在這台裝置上。恢復連線後再試一次。</p>
     </div>
   );
 }

@@ -1,32 +1,38 @@
 @import "tailwindcss";
 
-/* 顏色照設計稿：米白底、白卡片、深綠主色；橘色只用在「要注意」的地方 */
+/* 「事務所」風格：像試算表的冷灰底、白色表格、藍色主色；橘色只用在「要注意」的地方 */
 @theme {
-  --color-brand-50: #f3f8f4;
-  --color-brand-100: #e7f0ea;
-  --color-brand-200: #c9dccf;
-  --color-brand-500: #3d8a63;
-  --color-brand-600: #2f6f4f;
-  --color-brand-700: #1f4f37;
-  --color-paper: #f5f3ee;
-  --color-panel: #faf9f5;
-  --color-calc: #faf8f3;
-  --color-head: #f1efe8;
-  --color-line: #e4e0d6;
-  --color-line-soft: #f0ece3;
-  --color-field: #d6d1c4;
-  --color-ink: #1d1c1a;
-  --color-ink-2: #3d3a35;
-  --color-muted: #5e5a52;
-  --color-faint: #77726a;
-  --color-ghost: #a39e93;
-  --color-warn-50: #fff8ec;
-  --color-warn-100: #fff4e0;
-  --color-warn-line: #ebd9b4;
-  --color-warn-500: #c98a1b;
-  --color-warn-700: #9a5b00;
-  --color-warn-800: #7a4700;
+  --color-brand-50: #eef4fc;
+  --color-brand-100: #dce8f8;
+  --color-brand-200: #b7ceef;
+  --color-brand-500: #2f6fcc;
+  --color-brand-600: #1f5fbf;
+  --color-brand-700: #16468f;
+  --color-paper: #f3f5f8;
+  --color-panel: #f7f8fa;
+  --color-calc: #f7f8fa;
+  --color-head: #eef1f5;
+  --color-line: #d5dbe4;
+  --color-line-soft: #e3e7ed;
+  --color-field: #b8c1cf;
+  --color-ink: #1e2633;
+  --color-ink-2: #3b4556;
+  --color-muted: #5b6577;
+  --color-faint: #5b6577;
+  --color-ghost: #6b7486;
+  --color-warn-50: #fdf3e7;
+  --color-warn-100: #fbe8d2;
+  --color-warn-line: #e8c9a6;
+  --color-warn-500: #b4530a;
+  --color-warn-700: #8a3f06;
+  --color-warn-800: #6e3204;
+  /* 上方深色選單列 */
+  --color-chrome: #1e2633;
+  --color-chrome-ink: #e6eaf0;
+  --color-chrome-muted: #c3cbd8;
   --font-sans: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  /* 中文字沒有等寬字：退回一般的黑體，不要掉到細明體 */
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", monospace;
 }
 
 :root {
@@ -41,8 +47,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 數字欄位對齊 */
+/* 數字欄位：等寬字、對齊（像試算表）；IBM Plex Mono 載不到時用系統的等寬字 */
 .tabular {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

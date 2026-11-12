@@ -97,122 +97,113 @@ export default async function Home() {
     },
   ];
 
+  // 合計列：跟各列同一套算法
+  const named = sites.reduce((n, s) => n + (s.count - s.noName), 0);
+  const cell = "border border-line-soft px-2.5 py-2";
+
   return (
-    <div className="max-w-[1180px]">
+    <div className="max-w-[1280px]">
       <PageHeader
         title="本期總覽"
-        description={`${periodLabel(period)}・${activeSites.length} 個收購點${change ? `・最後修改 ${when(change.at)}${change.by ? `（${change.by}）` : ""}` : ""}`}
+        context={`${periodLabel(period)}・${activeSites.length} 個收購點`}
+        description={change ? `最後修改 ${when(change.at)}${change.by ? `（${change.by}）` : ""}` : undefined}
         actions={
           <>
-            <Link href="/grain" className={buttonClass.primary}>
-              ＋ 輸入公糧
-            </Link>
             {user.role === "admin" && (
               <Link href="/import" className={buttonClass.secondary}>
                 匯入 Excel
               </Link>
             )}
+            <Link href="/grain" className={buttonClass.primary}>
+              ＋ 輸入公糧
+            </Link>
           </>
         }
       />
 
-      <section aria-label="本期數字" className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-3.5">
+      {/* 一條有直線分隔的數字列（像試算表的表頭），不是一張張卡片 */}
+      <section
+        aria-label="本期數字"
+        className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line-soft xl:grid-cols-4"
+      >
         {stats.map((s) => (
-          <div key={s.label} className="flex min-w-0 flex-col gap-1.5 rounded-[14px] border border-line bg-white px-4 py-4 md:px-5">
-            <span className="text-[13px] text-muted">{s.label}</span>
+          <div key={s.label} className="flex min-w-0 flex-col gap-0.5 bg-white px-4 py-3">
+            <span className="text-[14px] text-muted">{s.label}</span>
             <span
-              className={`tabular truncate text-2xl font-bold xl:text-[28px] ${s.warn ? "text-warn-700" : s.brand ? "text-brand-700" : "text-ink"}`}
+              className={`tabular truncate text-[24px] font-semibold leading-tight xl:text-[26px] ${s.warn ? "text-warn-700" : s.brand ? "text-brand-700" : "text-ink"}`}
             >
               {s.value}
             </span>
-            <span className="truncate text-[13px] text-muted">{s.sub}</span>
+            <span className="truncate text-[14px] text-muted">{s.sub}</span>
           </div>
         ))}
       </section>
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-        {todos.length > 0 && (
-          <section aria-labelledby="todo-h" className="rounded-[14px] border border-warn-line bg-warn-50 px-5 py-4 lg:w-[360px] lg:shrink-0">
-            <h2 id="todo-h" className="mb-3 flex items-center gap-2 text-[17px] font-bold">
-              <span className="inline-flex size-6 items-center justify-center rounded-full bg-warn-700 text-[13px] text-white">
-                {todos.length}
-              </span>
-              待處理
-            </h2>
-            <ul className="flex flex-col">
-              {todos.slice(0, 8).map((t) => (
-                <li key={t.title} className="flex items-center gap-3 border-t border-warn-line py-2.5 first:border-t-0">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium">{t.title}</div>
-                    <div className="text-[13px] text-muted">{t.detail}</div>
-                  </div>
-                  <Link href={t.href} className="shrink-0 rounded-lg border border-warn-line bg-white px-3 py-1.5 text-sm font-bold text-warn-800">
-                    {t.action}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section aria-labelledby="sites-h" className="min-w-0 flex-1 overflow-hidden rounded-[14px] border border-line bg-white">
-          <div className="flex items-baseline gap-3 px-5 pb-2 pt-4">
-            <h2 id="sites-h" className="text-[17px] font-bold">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <section
+          aria-labelledby="sites-h"
+          className="min-w-0 flex-1 overflow-hidden rounded-[4px] border border-line bg-white order-2 lg:order-1"
+        >
+          <div className="flex flex-wrap items-baseline gap-x-3 border-b border-line bg-head px-3.5 py-2.5">
+            <h2 id="sites-h" className="text-[16px] font-bold">
               各收購點
             </h2>
-            <span className="text-[13px] text-muted">點名稱直接打開公糧</span>
+            <span className="text-[14px] text-muted">點名稱直接打開公糧</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="tabular w-full min-w-[600px] whitespace-nowrap text-[15px]">
+            <table className="w-full min-w-[640px] border-collapse whitespace-nowrap text-[15px]">
               <thead>
-                <tr className="border-y border-line bg-panel text-left text-sm text-ink-2">
-                  <th className="px-5 py-2 font-bold">收購點</th>
-                  <th className="px-3 py-2 text-right font-bold">筆數</th>
-                  <th className="px-3 py-2 text-right font-bold">公斤</th>
-                  <th className="px-3 py-2 font-bold">週報表（日期、水分）</th>
-                  <th className="px-5 py-2 font-bold">前往</th>
+                <tr className="bg-head text-left text-[15px] text-ink-2">
+                  <th className="w-10 border border-line-soft px-1 py-2 text-center text-[13px] font-medium text-muted">#</th>
+                  <th className={`${cell} font-bold`}>收購點</th>
+                  <th className={`${cell} text-right font-bold`}>筆數</th>
+                  <th className={`${cell} text-right font-bold`}>公斤</th>
+                  <th className={`${cell} font-bold`}>週報表（日期、水分）</th>
+                  <th className={`${cell} font-bold`}>前往</th>
                 </tr>
               </thead>
               <tbody>
-                {sites.map((s) => {
+                {sites.map((s, i) => {
                   const named = s.count - s.noName;
                   const done = named - s.weeklyPending;
                   const complete = s.weeklyPending === 0;
                   return (
-                    <tr key={s.site.id} className="border-t border-line-soft">
-                      <td className="px-5 py-2.5 font-medium">
-                        <Link href={`/grain?site=${s.site.id}`} className="text-ink hover:text-brand-700">
+                    <tr key={s.site.id}>
+                      <td className="tabular border border-line-soft bg-panel px-1 text-center text-[13px] text-muted">{i + 1}</td>
+                      <td className={`${cell} font-medium`}>
+                        <Link href={`/grain?site=${s.site.id}`} className="text-ink underline-offset-4 hover:text-brand-700 hover:underline">
                           {s.site.name}
                         </Link>
-                        {!s.site.active && <span className="ml-2 text-xs text-ghost">停用</span>}
+                        {!s.site.active && <span className="ml-2 text-[13px] text-muted">停用</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-right">{s.count}</td>
-                      <td className="px-3 py-2.5 text-right">{fmt(s.kg)}</td>
-                      <td className="px-3 py-2.5">
+                      <td className={`${cell} tabular text-right`}>{s.count}</td>
+                      <td className={`${cell} tabular text-right`}>{fmt(s.kg)}</td>
+                      <td className={`${cell} ${s.count > 0 && !complete ? "bg-warn-50" : ""}`}>
                         {s.count > 0 && (
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-2 w-28 overflow-hidden rounded-full bg-line-soft">
-                              <div
-                                className={`h-full rounded-full ${complete ? "bg-brand-600" : "bg-warn-500"}`}
-                                style={{ width: `${named ? Math.round((done / named) * 100) : 100}%` }}
-                              />
-                            </div>
-                            <span className={`text-[13px] ${complete ? "text-muted" : "text-warn-800"}`}>
-                              {complete ? "完成" : `${done} / ${named}`}
-                            </span>
-                          </div>
+                          <span className={`text-[14px] ${complete ? "text-ink-2" : "font-bold text-warn-800"}`}>
+                            {complete ? (
+                              "✓ 完成"
+                            ) : (
+                              <>
+                                <span className="tabular">
+                                  {done} / {named}
+                                </span>
+                                　缺 <span className="tabular">{s.weeklyPending}</span>
+                              </>
+                            )}
+                          </span>
                         )}
                       </td>
-                      <td className="px-5 py-2.5 text-sm">
-                        <Link href={`/grain?site=${s.site.id}`} className="text-brand-600 hover:underline">
+                      <td className={`${cell} text-[15px]`}>
+                        <Link href={`/grain?site=${s.site.id}`} className="text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline">
                           公糧
                         </Link>
                         ・
-                        <Link href={`/weekly?site=${s.site.id}`} className="text-brand-600 hover:underline">
+                        <Link href={`/weekly?site=${s.site.id}`} className="text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline">
                           週報表
                         </Link>
                         ・
-                        <Link href={`/receipts?site=${s.site.id}`} className="text-brand-600 hover:underline">
+                        <Link href={`/receipts?site=${s.site.id}`} className="text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline">
                           收款單
                         </Link>
                       </td>
@@ -220,9 +211,50 @@ export default async function Home() {
                   );
                 })}
               </tbody>
+              {sites.length > 0 && (
+                <tfoot>
+                  <tr className="bg-head font-bold [&>td]:border-line">
+                    <td className="border px-1" />
+                    <td className={cell}>合計</td>
+                    <td className={`${cell} tabular text-right`}>{fmt(totals.count)}</td>
+                    <td className={`${cell} tabular text-right`}>{fmt(totals.kg)}</td>
+                    <td className={`${cell} tabular text-[14px]`}>
+                      {named - totals.weeklyPending} / {named}
+                    </td>
+                    <td className={cell} />
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
+
+        {todos.length > 0 && (
+          <section
+            aria-labelledby="todo-h"
+            className="overflow-hidden rounded-[4px] border border-warn-line bg-white order-1 lg:order-2 lg:w-[360px] lg:shrink-0"
+          >
+            <h2 id="todo-h" className="border-b border-warn-line bg-warn-50 px-3.5 py-2.5 text-[16px] font-bold text-warn-800">
+              待處理　<span className="tabular">{todos.length}</span>
+            </h2>
+            <ul className="flex flex-col">
+              {todos.slice(0, 8).map((t) => (
+                <li key={t.title} className="flex items-center gap-3 border-b border-line-soft px-3.5 py-2.5 last:border-b-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{t.title}</div>
+                    <div className="text-[14px] text-muted">{t.detail}</div>
+                  </div>
+                  <Link
+                    href={t.href}
+                    className="inline-flex min-h-11 shrink-0 items-center rounded-[4px] border border-field bg-white px-3 text-[15px] font-bold text-brand-700 hover:border-brand-600"
+                  >
+                    {t.action}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </div>
   );
